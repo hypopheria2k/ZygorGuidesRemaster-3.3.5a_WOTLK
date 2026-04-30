@@ -589,7 +589,7 @@ function Goal:AutoTranslate()
 	return oldL~=self.L
 end
 
-local function COLOR_LOC(s) return "|cffffee77"..s.."|r" end
+local function COLOR_LOC(s) return "|cffffee77"..(s or "?").."|r" end
 local function COLOR_COUNT(s) return "|cffffffcc"..s.."|r" end
 local function COLOR_ITEM(s) return "|cffaaeeff"..s.."|r" end
 local function COLOR_QUEST(s) return "|cffbb99ff"..s.."|r" end

@@ -1094,6 +1094,9 @@ function ItemScore:OnEvent(event,arg1,arg2,...)
 			ItemScore.PendingMasterLootNotice = false
 			ItemScore:HandleMasterLootOpened()
 		end
+		if ItemScore.GearFinder and ItemScore.GearFinder.HadUnresolvedItems and ItemScore.GearFinder.MainFrame and ItemScore.GearFinder.MainFrame:IsVisible() then
+			ItemScore.GearFinder:ScheduleItemInfoRefresh()
+		end
 	end
 end
 

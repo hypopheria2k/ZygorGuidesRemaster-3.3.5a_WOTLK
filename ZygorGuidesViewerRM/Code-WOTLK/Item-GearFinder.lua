@@ -2,7 +2,7 @@ local ZGV = ZygorGuidesViewer
 if not (ZGV and ZGV.ItemScore and ZGV.ItemScore.GearFinder) then return end
 local GearFinder = ZGV.ItemScore.GearFinder
 
-GearFinder.PAST_DUNGEONS_LIMIT = 30 -- how many levels can user be above previous expansion cap before we start ignoring its dungeon
+GearFinder.PAST_DUNGEONS_LIMIT = 10 -- match retail-style finder focus; ignore far-obsolete dungeons sooner
 GearFinder.FUTURE_DUNGEONS_LIMIT = 5 -- how many levels to look ahead for future upgrades
 
 function GearFinder:Initialise()
@@ -111,6 +111,10 @@ end
 function GearFinder:ShowFinder()
 	if ZygorGearFinder and ZygorGearFinder:IsVisible() then GearFinder.MainFrame:Hide() return end
 
+	if CharacterFrame and not CharacterFrame:IsShown() and ToggleCharacter then
+		ToggleCharacter("PaperDollFrame")
+	end
+
 	-- Hook character frame tabs to hide gear finder when user clicks them
 	if not GearFinder.HookedChar then
 		hooksecurefunc("CharacterFrameTab_OnClick", function()
@@ -138,6 +142,13 @@ function GearFinder:ShowFinder()
 	for i=1,(CharacterFrame.numTabs or 5) do
 		local tab = _G["CharacterFrameTab"..i]
 		if tab then PanelTemplates_DeselectTab(tab) end
+	end
+
+	if ItemScore and ItemScore.Upgrades and ItemScore.Upgrades.ScoreEquippedItems then
+		if ItemScore.SetStatWeights then
+			ItemScore:SetStatWeights()
+		end
+		ItemScore.Upgrades:ScoreEquippedItems()
 	end
 
 	ZygorGearFinder:Show()

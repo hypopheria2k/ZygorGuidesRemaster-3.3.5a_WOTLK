@@ -5509,7 +5509,7 @@ ZygorGuidesViewer:RegisterGuide("Zygor's Horde Leveling Guides\\Main Guide (13-2
 	step //129
 		ding 17
 	step //130
-		Hearth to the Sepulcher|goto 43.2,41.4|use hearthstone##6948|noway|c
+		'Hearth to the Sepulcher|goto 43.2,41.4|use hearthstone##6948|noway|c
 	step //131
 		goto 42.8,40.9
 		.talk Apothecary Renferrel##1937
@@ -5566,7 +5566,7 @@ ZygorGuidesViewer:RegisterGuide("Zygor's Horde Leveling Guides\\Main Guide (13-2
 		.kill Pyrewood Village mobs|n
 		.get 6 Pyrewood Shackle|q 99/1
 	step //143
-		Hearth to the Sepulcher|goto 43.2,41.4|use hearthstone##6948|noway|c
+		'Hearth to the Sepulcher|goto 43.2,41.4|use hearthstone##6948|noway|c
 	step //144
 		goto 44.0,40.9
 		.talk Shadow Priest Allister##2121
@@ -12125,7 +12125,7 @@ ZygorGuidesViewer:RegisterGuide("Zygor's Horde Leveling Guides\\Levels (55-60)",
 		..'Listen to his story
 		..turnin Redemption##5742
 	step //204
-		Hearth to Undercity|goto Undercity|use hearthstone##6948|noway|c
+		'Hearth to Undercity|goto Undercity|use hearthstone##6948|noway|c
 	step //205
 		goto Undercity,69.8,43.1
 		.talk Royal Overseer Bauhaus##10781

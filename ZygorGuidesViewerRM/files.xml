@@ -22,6 +22,7 @@
 	<!-- ItemScore & Gear Finder system -->
 	<Script file="Code-WOTLK\Item-DataTables.lua"/>
 	<Script file="Data-WOTLK\Item-Statweights.lua"/>
+	<Script file="Data-WOTLK\GearFinderItemMeta.lua"/>
 	<Script file="Item-ItemScore.lua"/>
 	<Script file="Code-WOTLK\Item-ItemScore.lua"/>
 	<Script file="Item-Upgrades.lua"/>
