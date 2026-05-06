@@ -164,6 +164,12 @@ This addon is fully open source and can be inspected before use.
 
 ## Changelog
 
+### Revision 153 - 3.0.153
+
+- Remastered the Gear Finder presentation with a cleaner two-column card layout, centered title treatment, warmer remaster-aligned panel colors, and a more intentional footer hierarchy.
+- Refined Gear Finder row geometry and typography for better readability, spacing, and slot-grid fit, including blocked-row styling for no-upgrade states such as two-hand offhand conflicts.
+- Updated addon version metadata to 3.0.153.
+
 ### Revision 152 - 3.0.152
 
 - Carried the BIS rollout forward into a validation-focused release after the full class/spec phase coverage pass, keeping curated BIS annotations broad while tightening remaining early-tier healer/caster side-slot carry-forward gaps where the tier rows had dropped known Phase 1 weapons or wands.
@@ -342,6 +348,8 @@ This remaster focuses on UI/UX modernization, packaging quality, compatibility m
 
 <img width="433" height="247" alt="image" src="https://github.com/user-attachments/assets/579b6acb-df5e-4f40-8ef3-7d6b33e1015d" />
 <img width="436" height="248" alt="image" src="https://github.com/user-attachments/assets/a845b881-2831-43e3-bd26-5287f9783d68" />
+
+
 
 
 

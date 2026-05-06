@@ -1286,27 +1286,57 @@ local function make_button(object)
 	local parent = GearFinder.MainFrame.CenterColumn or GearFinder.MainFrame
 	local button = CHAIN(CreateFrame("Button",nil,parent))
 		:SetFrameLevel(parent:GetFrameLevel()+2)
-		:SetSize(260,40)
+		:SetSize(262,54)
 		:Show()
 	.__END
+		button.card = CHAIN(CreateFrame("Frame", nil, button))
+			:SetPoint("TOPLEFT")
+			:SetPoint("BOTTOMRIGHT")
+		.__END
+		button.card:SetBackdrop({
+			bgFile = "Interface\\Buttons\\WHITE8x8",
+			edgeFile = "Interface\\Buttons\\WHITE8x8",
+			tile = false, edgeSize = 1,
+			insets = { left = 0, right = 0, top = 0, bottom = 0 },
+		})
+		button.card:SetBackdropColor(0.05, 0.06, 0.10, 0.92)
+		button.card:SetBackdropBorderColor(0.22, 0.18, 0.12, 0.95)
+		button.card:SetFrameLevel(button:GetFrameLevel())
+
 		button:SetScript("OnEnter",function()
+			button.card:SetBackdropBorderColor(0.70, 0.56, 0.18, 0.95)
+			button.card:SetBackdropColor(0.07, 0.08, 0.12, 0.96)
 			if button.dungeonguide then
 				button.loadguide:Show()
 			end
 		end)
 		button:SetScript("OnLeave",function()
+			button.card:SetBackdropBorderColor(0.22, 0.18, 0.12, 0.95)
+			button.card:SetBackdropColor(0.05, 0.06, 0.10, 0.92)
 			button.loadguide:Hide()
 		end)
 
 
 	button.tooltiphandler = CHAIN(CreateFrame("Button",nil,button))
 		:SetFrameLevel(button:GetFrameLevel()+1)
-		:SetPoint("TOPLEFT")
-		:SetSize(40,40)
+		:SetPoint("TOPLEFT", 6, -6)
+		:SetSize(38,38)
 	.__END	
+		button.iconbg = CHAIN(CreateFrame("Frame", nil, button.tooltiphandler))
+			:SetAllPoints()
+		.__END
+		button.iconbg:SetBackdrop({
+			bgFile = "Interface\\Buttons\\WHITE8x8",
+			edgeFile = "Interface\\Buttons\\WHITE8x8",
+			tile = false, edgeSize = 1,
+			insets = { left = 0, right = 0, top = 0, bottom = 0 },
+		})
+		button.iconbg:SetBackdropColor(0.02, 0.03, 0.05, 1.0)
+		button.iconbg:SetBackdropBorderColor(0.28, 0.22, 0.14, 1.0)
+		button.iconbg:SetFrameLevel(button.tooltiphandler:GetFrameLevel())
 		button.itemicon = CHAIN(button.tooltiphandler:CreateTexture()) 
-			:SetSize(40,40)
-			:SetPoint("TOPLEFT",button) 
+			:SetSize(34,34)
+			:SetPoint("CENTER",button.tooltiphandler, "CENTER", 0, 0)
 			:SetTexture(object[1])
 		.__END
 
@@ -1325,8 +1355,8 @@ local function make_button(object)
 
 	button.bisbadge = CHAIN(CreateFrame("Button", nil, button.tooltiphandler))
 		:SetFrameLevel(button.tooltiphandler:GetFrameLevel()+1)
-		:SetPoint("TOPRIGHT", button.tooltiphandler, "TOPRIGHT", 2, 2)
-		:SetSize(14,14)
+		:SetPoint("TOPRIGHT", button.tooltiphandler, "TOPRIGHT", 5, 5)
+		:SetSize(16,16)
 		:Hide()
 	.__END
 		button.bisicon = CHAIN(button.bisbadge:CreateTexture(nil, "ARTWORK"))
@@ -1343,38 +1373,50 @@ local function make_button(object)
 			GameTooltip:FadeOut()
 		end)
 
+	button.slotlabel = CHAIN(button:CreateFontString())
+		:SetPoint("TOPLEFT", button.tooltiphandler, "TOPRIGHT", 8, -1)
+		:SetFont(FONTBOLD, 9)
+		:SetTextColor(0.82, 0.78, 0.68)
+		:SetText(object[3] or "")
+		:SetWidth(156)
+		:SetJustifyH("LEFT")
+		:SetWordWrap(false)
+	.__END
 
 	button.itemlink = CHAIN(button:CreateFontString())
-		:SetPoint("TOPLEFT",button.itemicon,"TOPRIGHT",5,0)
-		:SetFont(FONT,12)
+		:SetPoint("TOPLEFT",button.slotlabel,"BOTTOMLEFT",0,0)
+		:SetFont(FONTBOLD,12)
+		:SetTextColor(0.95, 0.95, 0.96)
 		:SetText("")
-		:SetWidth(210)
+		:SetWidth(190)
 		:SetJustifyH("LEFT")
 		:SetWordWrap(false)
 	.__END
 
 	button.itemdungeon = CHAIN(button:CreateFontString())
-		:SetPoint("TOPLEFT",button.itemlink,"BOTTOMLEFT",0,-3)
-		:SetFont(FONT,10)
+		:SetPoint("TOPLEFT",button.itemlink,"BOTTOMLEFT",0,-1)
+		:SetFont(FONT,9)
+		:SetTextColor(0.86, 0.78, 0.58)
 		:SetText(L["gearfinder_no_upgrade"])
-		:SetWidth(210)
+		:SetWidth(190)
 		:SetJustifyH("LEFT")
 		:SetWordWrap(false)
 	.__END
 	button.itemencounter = CHAIN(button:CreateFontString())
-		:SetPoint("TOPLEFT",button.itemdungeon,"BOTTOMLEFT",0,-3)
-		:SetFont(FONT,10)
+		:SetPoint("TOPLEFT",button.itemdungeon,"BOTTOMLEFT",0,0)
+		:SetFont(FONT,9)
+		:SetTextColor(0.78, 0.80, 0.84)
 		:SetText("")
-		:SetWidth(210)
+		:SetWidth(190)
 		:SetJustifyH("LEFT")
 		:SetWordWrap(false)
 	.__END
 
 	button.loadguide = CHAIN(ZGV.CreateFrameWithBG("Button", nil, button, nil))
-		:SetBackdropColor(0,0,0,1)
-		:SetBackdropBorderColor(0,0,0,0)
-		:SetSize(20,20)
-		:SetPoint("RIGHT")
+		:SetBackdropColor(0.10,0.12,0.18,0.98)
+		:SetBackdropBorderColor(0.46,0.34,0.16,0.98)
+		:SetSize(16,16)
+		:SetPoint("BOTTOMRIGHT",-6,6)
 		:Hide()
 		:SetScript("OnEnter",function()
 			button.loadguide:Show()
@@ -1394,11 +1436,29 @@ local function make_button(object)
 			end
 		end)
 	.__END
+		button.loadguide:SetNormalTexture("Interface\\Buttons\\UI-PlusButton-Up")
 
 	button.slotID = object[2]
 	button.slotName = object[3]
 	button.slotTexture = object[1]
 	button.dungeonguide = nil
+	function button:SetResultState(hasUpgrade, isBIS)
+		if hasUpgrade then
+			self.card:SetBackdropColor(0.05, 0.06, 0.10, 0.92)
+			self.card:SetBackdropBorderColor(0.22, 0.18, 0.12, 0.95)
+			self.iconbg:SetBackdropBorderColor(0.28, 0.22, 0.14, 1.0)
+			self.slotlabel:SetTextColor(0.82, 0.78, 0.68)
+			self.itemdungeon:SetTextColor(0.86, 0.78, 0.58)
+			self.itemencounter:SetTextColor(0.78, 0.80, 0.84)
+		else
+			self.card:SetBackdropColor(0.06, 0.04, 0.05, 0.90)
+			self.card:SetBackdropBorderColor(0.26, 0.14, 0.14, 0.78)
+			self.iconbg:SetBackdropBorderColor(0.24, 0.14, 0.14, 0.78)
+			self.slotlabel:SetTextColor(0.70, 0.66, 0.62)
+			self.itemdungeon:SetTextColor(0.64, 0.58, 0.58)
+			self.itemencounter:SetTextColor(0.62, 0.56, 0.56)
+		end
+	end
 	return button
 end
 
@@ -1409,9 +1469,8 @@ function GearFinder:ApplySkin()
 	local MF = GearFinder.MainFrame
 	if not MF then return end
 
-	MF.Logo:SetTexture("Interface\\Icons\\INV_Chest_Chain_04")
-	MF.Logo:SetSize(24, 24)
-	MF.Logo:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+	MF.Logo:SetTexture(nil)
+	MF.Logo:SetSize(1, 1)
 
 	-- CenterColumn positioning set in CreateMainFrame
 
@@ -1428,8 +1487,8 @@ function GearFinder:CreateMainFrame()
 
 	self.MainFrame = CHAIN(ZGV.CreateFrameWithBG("Frame","ZygorGearFinder",CharacterFrame))
 		:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT")
-		:SetWidth(580)
-		:SetHeight(CharacterFrame:GetHeight() + 56)
+		:SetWidth(600)
+		:SetHeight(CharacterFrame:GetHeight() + 176)
 		:SetFrameStrata("HIGH")
 		:SetFrameLevel(CharacterFrame:GetFrameLevel()+10)
 		:SetToplevel(true)
@@ -1442,19 +1501,26 @@ function GearFinder:CreateMainFrame()
 		insets = { left = 4, right = 4, top = 4, bottom = 4 },
 	})
 	self.MainFrame:SetBackdropColor(0.05, 0.05, 0.08, 1.0)
-	self.MainFrame:SetBackdropBorderColor(0.6, 0.6, 0.6, 1.0)
+	self.MainFrame:SetBackdropBorderColor(0.48, 0.38, 0.18, 1.0)
 
 	local MF = self.MainFrame
 
 	MF.Logo = CHAIN(MF:CreateTexture())
-		:SetPoint("TOP",MF,"TOP",0,-3)
+		:SetPoint("TOP",MF,"TOP",0,-2)
 	.__END
 	MF.Title = CHAIN(MF:CreateFontString())
-		:SetPoint("TOPLEFT",8,-8)
-		:SetFont(FONT,14)
-		:SetTextColor(1, 0.82, 0)
-		:SetText(L["gearfinder_title"])
+		:SetPoint("TOP",MF,"TOP",0,-8)
+		:SetFont(FONTBOLD,16)
+		:SetTextColor(0.96, 0.90, 0.74)
+		:SetText("|cffffff88Z|cffffee66y|cffffdd44g|cffffcc22o|cffffbb00r|r Guides Gear Finder")
 	 .__END
+	MF.Subtitle = CHAIN(MF:CreateFontString())
+		:SetPoint("TOP", MF.Title, "BOTTOM", 0, -2)
+		:SetFont(FONT, 9)
+		:SetTextColor(0.82, 0.78, 0.68)
+		:SetText("Practical upgrade path with curated BIS markers")
+		:SetJustifyH("CENTER")
+	.__END
 	MF.close = CHAIN(CreateFrame("Button",nil,MF,"UIPanelCloseButton"))
 		:SetPoint("TOPRIGHT",-2,-2)
 		:SetSize(20,20)
@@ -1474,13 +1540,13 @@ function GearFinder:CreateMainFrame()
 
 	-- content container
 	MF.CenterColumn = CHAIN(ZGV.CreateFrameWithBG("Frame", nil, MF))
-		:SetPoint("TOPLEFT", MF, "TOPLEFT", 10, -35)
-		:SetPoint("BOTTOMRIGHT", MF, "BOTTOMRIGHT", -10, 96)
+		:SetPoint("TOPLEFT", MF, "TOPLEFT", 10, -48)
+		:SetPoint("BOTTOMRIGHT", MF, "BOTTOMRIGHT", -10, 108)
 		:EnableMouse(true)
 		:Show()
 		.__END
-	MF.CenterColumn:SetBackdropColor(0.03, 0.03, 0.05, 0.6)
-	MF.CenterColumn:SetBackdropBorderColor(0.2, 0.2, 0.2, 0.5)
+	MF.CenterColumn:SetBackdropColor(0.02, 0.03, 0.05, 0.88)
+	MF.CenterColumn:SetBackdropBorderColor(0.24, 0.20, 0.14, 0.85)
 
 
 	-- 3.3.5a: use texture paths instead of FileDataIDs
@@ -1531,9 +1597,9 @@ function GearFinder:CreateMainFrame()
 		local button = make_button(object)
 	
 		if previous then
-			button:SetPoint("TOPLEFT",previous,"BOTTOMLEFT",0,-6)
+			button:SetPoint("TOPLEFT",previous,"BOTTOMLEFT",0,-2)
 		else
-			button:SetPoint("TOPLEFT",MF.CenterColumn,"TOPLEFT",10,-10)
+			button:SetPoint("TOPLEFT",MF.CenterColumn,"TOPLEFT",10,-5)
 		end
 		previous = button
 		MF.Buttons[object[2]] = button
@@ -1544,9 +1610,9 @@ function GearFinder:CreateMainFrame()
 		local button = make_button(object)
 	
 		if previous then
-			button:SetPoint("TOPLEFT",previous,"BOTTOMLEFT",0,-6)
+			button:SetPoint("TOPLEFT",previous,"BOTTOMLEFT",0,-2)
 		else
-			button:SetPoint("TOPLEFT",MF.Buttons[INVSLOT_HEAD],"TOPRIGHT",20,0)
+			button:SetPoint("TOPLEFT",MF.Buttons[INVSLOT_HEAD],"TOPRIGHT",12,0)
 		end
 		previous = button
 		MF.Buttons[object[2]] = button
@@ -1555,10 +1621,10 @@ function GearFinder:CreateMainFrame()
 	MF.FooterBar = CHAIN(ZGV.CreateFrameWithBG("Frame", nil, MF))
 		:SetPoint("BOTTOMLEFT", MF, "BOTTOMLEFT", 12, 10)
 		:SetPoint("BOTTOMRIGHT", MF, "BOTTOMRIGHT", -12, 10)
-		:SetHeight(64)
+		:SetHeight(74)
 		.__END
-	MF.FooterBar:SetBackdropColor(0.04, 0.05, 0.08, 0.92)
-	MF.FooterBar:SetBackdropBorderColor(0.12, 0.16, 0.24, 0.95)
+	MF.FooterBar:SetBackdropColor(0.05, 0.06, 0.10, 0.96)
+	MF.FooterBar:SetBackdropBorderColor(0.28, 0.22, 0.14, 0.96)
 
 	MF.ErrorBox = CHAIN(ZGV.CreateFrameWithBG("Frame", nil, MF.FooterBar))
 		:SetPoint("TOPRIGHT", MF.FooterBar, "TOPRIGHT", -6, -4)
@@ -1588,15 +1654,16 @@ function GearFinder:CreateMainFrame()
 		.__END
 
 	MF.DungeonImage = CHAIN(MF.FooterBar:CreateTexture(nil,"ARTWORK")) 
-		:SetSize(24,24)
-		:SetPoint("LEFT",MF.FooterBar,"LEFT",8,0)
+		:SetSize(28,28)
+		:SetPoint("LEFT",MF.FooterBar,"LEFT",10,0)
 		:Hide()
 	.__END
 
 	MF.DungeonMessage = CHAIN(MF.FooterBar:CreateFontString())
-		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",38,-4)
+		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",46,-6)
 		:SetWidth(540)
-		:SetFont(FONT,8)
+		:SetFont(FONTBOLD,9)
+		:SetTextColor(0.82, 0.78, 0.68)
 		:SetText(L["gearfinder_suggested_dungeon"])
 		:SetJustifyH("LEFT")
 	.__END
@@ -1624,27 +1691,30 @@ function GearFinder:CreateMainFrame()
 	.__END
 
 	MF.DungeonName = CHAIN(MF.FooterBar:CreateFontString())
-		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",38,-16)
-		:SetFont(FONT,10)
+		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",46,-20)
+		:SetFont(FONTBOLD,13)
+		:SetTextColor(0.96, 0.94, 0.90)
 		:SetText("")
-		:SetWidth(540)
+		:SetWidth(500)
 		:SetJustifyH("LEFT")
 		:SetWordWrap(false)
 	.__END
 	MF.DungeonDesc = CHAIN(MF.FooterBar:CreateFontString())
-		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",38,-30)
-		:SetFont(FONT,8)
+		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",46,-38)
+		:SetFont(FONT,9)
+		:SetTextColor(0.72, 0.80, 0.90)
 		:SetText("")
-		:SetWidth(540)
+		:SetWidth(500)
 		:SetJustifyH("LEFT")
 		:SetJustifyV("TOP")
 		:SetWordWrap(false)
 	.__END
 	MF.DungeonReason = CHAIN(MF.FooterBar:CreateFontString())
-		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",38,-44)
-		:SetFont(FONT,8)
+		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",46,-55)
+		:SetFont(FONT,9)
+		:SetTextColor(0.84, 0.85, 0.88)
 		:SetText("")
-		:SetWidth(540)
+		:SetWidth(500)
 		:SetJustifyH("LEFT")
 		:SetJustifyV("TOP")
 		:SetWordWrap(false)
@@ -1839,6 +1909,7 @@ function GearFinder:DisplayResults()
 			button.link = tooltipLink or nil
 			button.itemicon:SetDesaturated(upgrade.future)
 			button:SetAlpha(1)
+			button:SetResultState(true, bis and true or false)
 			if bis then
 				button.bisTooltipText = bis.label
 				button.bisbadge:Show()
@@ -1904,6 +1975,7 @@ function GearFinder:DisplayResults()
 			button.dungeonguide = nil
 			button.dungeon = nil
 			button.itemdungeon:SetText(L["gearfinder_no_upgrade"])
+			button:SetResultState(false, false)
 			local equippedBIS, bisInfo = false, nil
 			if ItemScore.IsEquippedBIS then
 				equippedBIS, bisInfo = ItemScore:IsEquippedBIS(slotID)
