@@ -201,6 +201,144 @@ local function GF_NormalizeDungeonName(name)
 	return name:lower()
 end
 
+local GF_GUIDE_HERO_IMAGE_DIR = ZGV.DIR.."\\Skins\\GuideImages\\"
+local GF_GUIDE_HERO_KEYWORDS = {
+	{ "blackfathom", "ashenvale" },
+	{ "blackrock", "burningsteppes" },
+	{ "dire maul", "feralas" },
+	{ "gnomeregan", "lochmodan" },
+	{ "maraudon", "desolace" },
+	{ "ragefire", "tanaris" },
+	{ "razorfen", "tanaris" },
+	{ "scarlet monastery", "duskwood" },
+	{ "scholomance", "duskwood" },
+	{ "shadowfang", "duskwood" },
+	{ "stratholme", "duskwood" },
+	{ "deadmines", "westfall" },
+	{ "stockade", "elwynn" },
+	{ "atal'hakkar", "swampofsorrows" },
+	{ "uldaman", "badlands" },
+	{ "wailing caverns", "ashenvale" },
+	{ "zul'farrak", "tanaris" },
+	{ "molten core", "burningsteppes" },
+	{ "blackwing lair", "burningsteppes" },
+	{ "ruins of ahn'qiraj", "silithus" },
+	{ "temple of ahn'qiraj", "silithus" },
+	{ "ahn'qiraj", "silithus" },
+	{ "world bosses", "winterspring" },
+	{ "zul'gurub", "stranglethorn" },
+	{ "hellfire", "hellfire" },
+	{ "blood furnace", "hellfire" },
+	{ "shattered halls", "hellfire" },
+	{ "slave pens", "zangarmarsh" },
+	{ "underbog", "zangarmarsh" },
+	{ "steamvault", "zangarmarsh" },
+	{ "auchenai", "terokkar" },
+	{ "sethekk", "terokkar" },
+	{ "shadow labyrinth", "terokkar" },
+	{ "mana-tombs", "terokkar" },
+	{ "old hillsbrad", "tanaris" },
+	{ "black morass", "tanaris" },
+	{ "botanica", "netherstorm" },
+	{ "mechanar", "netherstorm" },
+	{ "arcatraz", "netherstorm" },
+	{ "magisters", "terokkar" },
+	{ "black temple", "shadowmoon" },
+	{ "gruul", "bladesedge" },
+	{ "hyjal", "tanaris" },
+	{ "karazhan", "duskwood" },
+	{ "magtheridon", "hellfire" },
+	{ "serpentshrine", "zangarmarsh" },
+	{ "sunwell", "terokkar" },
+	{ "tempest keep", "netherstorm" },
+	{ "zul'aman", "terokkar" },
+	{ "icecrown", "icecrown" },
+	{ "pit of saron", "icecrown" },
+	{ "forge of souls", "icecrown" },
+	{ "halls of reflection", "icecrown" },
+	{ "trial of the champion", "stormpeaks" },
+	{ "trial of the crusader", "stormpeaks" },
+	{ "violet hold", "dragonblight" },
+	{ "nexus", "borean" },
+	{ "oculus", "borean" },
+	{ "utgarde", "howling" },
+	{ "gundrak", "zuldrak" },
+	{ "drak'tharon", "grizzlyhills" },
+	{ "azjol", "dragonblight" },
+	{ "ahn'kahet", "dragonblight" },
+	{ "halls of lightning", "stormpeaks" },
+	{ "halls of stone", "stormpeaks" },
+	{ "ulduar", "stormpeaks" },
+	{ "eye of eternity", "borean" },
+	{ "malygos", "borean" },
+	{ "vault of archavon", "dragonblight" },
+	{ "archavon", "dragonblight" },
+	{ "culling of stratholme", "dragonblight" },
+	{ "naxxramas", "dragonblight" },
+	{ "obsidian sanctum", "dragonblight" },
+	{ "ruby sanctum", "dragonblight" },
+	{ "onyxia", "burningsteppes" },
+}
+
+local function GF_ResolveFooterImage(dungeonGuide, dungeon)
+	local hay = ""
+	if dungeonGuide then
+		hay = ((dungeonGuide.title or "") .. " " .. (dungeonGuide.title_short or ""))
+	end
+	if dungeon and dungeon.name then
+		hay = hay .. " " .. dungeon.name
+	end
+	hay = string.lower(hay)
+	for _, entry in ipairs(GF_GUIDE_HERO_KEYWORDS) do
+		if string.find(hay, entry[1], 1, true) then
+			return GF_GUIDE_HERO_IMAGE_DIR .. entry[2] .. ".blp"
+		end
+	end
+	if dungeonGuide and dungeonGuide.image and dungeonGuide.image ~= "" then
+		return dungeonGuide.image
+	end
+	return nil
+end
+
+local function GF_GetFallbackFooterImageForLevel(level)
+	level = tonumber(level) or 80
+	local image
+	if level < 20 then
+		image = "elwynn"
+	elseif level < 30 then
+		image = "redridge"
+	elseif level < 40 then
+		image = "stranglethorn"
+	elseif level < 50 then
+		image = "tanaris"
+	elseif level < 58 then
+		image = "winterspring"
+	elseif level < 62 then
+		image = "hellfire"
+	elseif level < 64 then
+		image = "zangarmarsh"
+	elseif level < 66 then
+		image = "terokkar"
+	elseif level < 68 then
+		image = "nagrand"
+	elseif level < 70 then
+		image = "netherstorm"
+	elseif level < 72 then
+		image = "borean"
+	elseif level < 74 then
+		image = "howling"
+	elseif level < 76 then
+		image = "dragonblight"
+	elseif level < 78 then
+		image = "zuldrak"
+	elseif level < 80 then
+		image = "stormpeaks"
+	else
+		image = "icecrown"
+	end
+	return GF_GUIDE_HERO_IMAGE_DIR .. image .. ".blp"
+end
+
 local function GF_GetDungeonData(ident)
 	local dungeons = ZGV.Dungeons
 	if not dungeons then return nil end
@@ -1286,7 +1424,7 @@ local function make_button(object)
 	local parent = GearFinder.MainFrame.CenterColumn or GearFinder.MainFrame
 	local button = CHAIN(CreateFrame("Button",nil,parent))
 		:SetFrameLevel(parent:GetFrameLevel()+2)
-		:SetSize(262,54)
+		:SetSize(274,54)
 		:Show()
 	.__END
 		button.card = CHAIN(CreateFrame("Frame", nil, button))
@@ -1378,7 +1516,7 @@ local function make_button(object)
 		:SetFont(FONTBOLD, 9)
 		:SetTextColor(0.82, 0.78, 0.68)
 		:SetText(object[3] or "")
-		:SetWidth(156)
+		:SetWidth(168)
 		:SetJustifyH("LEFT")
 		:SetWordWrap(false)
 	.__END
@@ -1388,7 +1526,7 @@ local function make_button(object)
 		:SetFont(FONTBOLD,12)
 		:SetTextColor(0.95, 0.95, 0.96)
 		:SetText("")
-		:SetWidth(190)
+		:SetWidth(202)
 		:SetJustifyH("LEFT")
 		:SetWordWrap(false)
 	.__END
@@ -1398,7 +1536,7 @@ local function make_button(object)
 		:SetFont(FONT,9)
 		:SetTextColor(0.86, 0.78, 0.58)
 		:SetText(L["gearfinder_no_upgrade"])
-		:SetWidth(190)
+		:SetWidth(202)
 		:SetJustifyH("LEFT")
 		:SetWordWrap(false)
 	.__END
@@ -1407,7 +1545,7 @@ local function make_button(object)
 		:SetFont(FONT,9)
 		:SetTextColor(0.78, 0.80, 0.84)
 		:SetText("")
-		:SetWidth(190)
+		:SetWidth(202)
 		:SetJustifyH("LEFT")
 		:SetWordWrap(false)
 	.__END
@@ -1612,7 +1750,7 @@ function GearFinder:CreateMainFrame()
 		if previous then
 			button:SetPoint("TOPLEFT",previous,"BOTTOMLEFT",0,-2)
 		else
-			button:SetPoint("TOPLEFT",MF.Buttons[INVSLOT_HEAD],"TOPRIGHT",12,0)
+			button:SetPoint("TOPLEFT",MF.Buttons[INVSLOT_HEAD],"TOPRIGHT",8,0)
 		end
 		previous = button
 		MF.Buttons[object[2]] = button
@@ -1625,6 +1763,40 @@ function GearFinder:CreateMainFrame()
 		.__END
 	MF.FooterBar:SetBackdropColor(0.05, 0.06, 0.10, 0.96)
 	MF.FooterBar:SetBackdropBorderColor(0.28, 0.22, 0.14, 0.96)
+	MF.FooterArt = CHAIN(MF.FooterBar:CreateTexture(nil,"ARTWORK"))
+		:SetPoint("TOPLEFT", MF.FooterBar, "TOPLEFT", 1, -1)
+		:SetPoint("BOTTOMRIGHT", MF.FooterBar, "BOTTOMRIGHT", -1, 1)
+		:SetAlpha(0.82)
+		:Hide()
+	.__END
+	MF.FooterArt:SetTexCoord(0.06, 0.94, 0.04, 0.96)
+	MF.FooterArt:SetBlendMode("BLEND")
+	MF.FooterSolid = CHAIN(MF.FooterBar:CreateTexture(nil,"OVERLAY"))
+		:SetPoint("TOPLEFT", MF.FooterBar, "TOPLEFT", 0, 0)
+		:SetPoint("BOTTOMLEFT", MF.FooterBar, "BOTTOMLEFT", 0, 0)
+		:SetWidth(190)
+		:SetTexture("Interface\\Buttons\\WHITE8x8")
+		:SetVertexColor(0.05, 0.06, 0.10, 1.00)
+	.__END
+	MF.FooterFade = CHAIN(MF.FooterBar:CreateTexture(nil,"OVERLAY"))
+		:SetPoint("TOPLEFT", MF.FooterBar, "TOPLEFT", 170, 0)
+		:SetPoint("BOTTOMLEFT", MF.FooterBar, "BOTTOMLEFT", 170, 0)
+		:SetWidth(250)
+		:SetTexture("Interface\\Buttons\\WHITE8x8")
+	.__END
+	if MF.FooterFade.SetGradientAlpha then
+		MF.FooterFade:SetGradientAlpha("HORIZONTAL",
+			0.05, 0.06, 0.10, 1.00,
+			0.05, 0.06, 0.10, 0.00
+		)
+	else
+		MF.FooterFade:SetVertexColor(0.05, 0.06, 0.10, 0.35)
+	end
+	MF.FooterShade = CHAIN(MF.FooterBar:CreateTexture(nil,"OVERLAY"))
+		:SetAllPoints(MF.FooterBar)
+		:SetTexture("Interface\\Buttons\\WHITE8x8")
+		:SetVertexColor(0, 0, 0, 0.03)
+	.__END
 
 	MF.ErrorBox = CHAIN(ZGV.CreateFrameWithBG("Frame", nil, MF.FooterBar))
 		:SetPoint("TOPRIGHT", MF.FooterBar, "TOPRIGHT", -6, -4)
@@ -1653,14 +1825,14 @@ function GearFinder:CreateMainFrame()
 		:SetText("")
 		.__END
 
-	MF.DungeonImage = CHAIN(MF.FooterBar:CreateTexture(nil,"ARTWORK")) 
+	MF.DungeonImage = CHAIN(MF.FooterBar:CreateTexture(nil,"OVERLAY")) 
 		:SetSize(28,28)
 		:SetPoint("LEFT",MF.FooterBar,"LEFT",10,0)
 		:Hide()
 	.__END
 
-	MF.DungeonMessage = CHAIN(MF.FooterBar:CreateFontString())
-		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",46,-6)
+	MF.DungeonMessage = CHAIN(MF.FooterBar:CreateFontString(nil,"OVERLAY"))
+		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",12,-6)
 		:SetWidth(540)
 		:SetFont(FONTBOLD,9)
 		:SetTextColor(0.82, 0.78, 0.68)
@@ -1690,8 +1862,8 @@ function GearFinder:CreateMainFrame()
 		:Hide()
 	.__END
 
-	MF.DungeonName = CHAIN(MF.FooterBar:CreateFontString())
-		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",46,-20)
+	MF.DungeonName = CHAIN(MF.FooterBar:CreateFontString(nil,"OVERLAY"))
+		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",12,-20)
 		:SetFont(FONTBOLD,13)
 		:SetTextColor(0.96, 0.94, 0.90)
 		:SetText("")
@@ -1699,20 +1871,20 @@ function GearFinder:CreateMainFrame()
 		:SetJustifyH("LEFT")
 		:SetWordWrap(false)
 	.__END
-	MF.DungeonDesc = CHAIN(MF.FooterBar:CreateFontString())
-		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",46,-38)
+	MF.DungeonDesc = CHAIN(MF.FooterBar:CreateFontString(nil,"OVERLAY"))
+		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",12,-38)
 		:SetFont(FONT,9)
-		:SetTextColor(0.72, 0.80, 0.90)
+		:SetTextColor(0.84, 0.86, 0.90)
 		:SetText("")
 		:SetWidth(500)
 		:SetJustifyH("LEFT")
 		:SetJustifyV("TOP")
 		:SetWordWrap(false)
 	.__END
-	MF.DungeonReason = CHAIN(MF.FooterBar:CreateFontString())
-		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",46,-55)
+	MF.DungeonReason = CHAIN(MF.FooterBar:CreateFontString(nil,"OVERLAY"))
+		:SetPoint("TOPLEFT",MF.FooterBar,"TOPLEFT",12,-55)
 		:SetFont(FONT,9)
-		:SetTextColor(0.84, 0.85, 0.88)
+		:SetTextColor(0.90, 0.90, 0.92)
 		:SetText("")
 		:SetWidth(500)
 		:SetJustifyH("LEFT")
@@ -1803,7 +1975,7 @@ local function find_dungeon_guide(ident)
 			if not dungeon_map or v<dungeon_map then dungeon_map = v end
 		end
 	else
-		dungeon.map = dungeon.map
+		dungeon_map = dungeon.map
 	end
 	dungeon_map = tonumber(dungeon_map)
 	dungeon_lfg = tonumber(dungeon.id)
@@ -2020,23 +2192,24 @@ function GearFinder:DisplayResults()
 
 	if best_dungeon then
 		local dungeon_guide, dungeon = find_dungeon_guide(best_dungeon[1])
+		local footerImage = GF_ResolveFooterImage(dungeon_guide, dungeon)
+		if footerImage then
+			MF.FooterArt:SetTexture(footerImage)
+			MF.FooterArt:Show()
+			MF.DungeonImage:SetTexture(nil)
+			MF.DungeonImage:Hide()
+		else
+			MF.FooterArt:SetTexture(nil)
+			MF.FooterArt:Hide()
+			MF.DungeonImage:SetTexture(nil)
+			MF.DungeonImage:Hide()
+		end
 		if dungeon_guide then
 			GearFinder.BestDungeonGuide = dungeon_guide
-
-			if dungeon_guide.image then
-				MF.DungeonImage:SetTexture(dungeon_guide.image)
-				MF.DungeonImage:SetTexCoord(0,1,0,1)
-				MF.DungeonImage:Show()
-			else
-				MF.DungeonImage:SetTexture(nil)
-				MF.DungeonImage:Hide()
-			end
 			MF.AddButton:Show()
 		else
 			GearFinder.BestDungeonGuide = nil
 			MF.AddButton:Hide()
-			MF.DungeonImage:SetTexture(nil)
-			MF.DungeonImage:Hide()
 		end
 
 		MF.DungeonMessage:SetText(L["gearfinder_suggested_dungeon"])
@@ -2054,6 +2227,9 @@ function GearFinder:DisplayResults()
 		MF.DungeonReason:Show()
 	else
 		GearFinder.BestDungeonGuide = nil
+		local footerImage = GF_GetFallbackFooterImageForLevel(ItemScore.playerlevel)
+		MF.FooterArt:SetTexture(footerImage)
+		MF.FooterArt:Show()
 		MF.DungeonImage:SetTexture(nil)
 		MF.DungeonImage:Hide()
 		MF.DungeonMessage:SetText(L["gearfinder_suggested_dungeon"] or "Suggested dungeon")
@@ -2100,6 +2276,10 @@ function GearFinder:ClearResults()
 
 	MF.DungeonImage:SetTexture(nil)
 	MF.DungeonImage:Hide()
+	if MF.FooterArt then
+		MF.FooterArt:SetTexture(nil)
+		MF.FooterArt:Hide()
+	end
 	MF.DungeonMessage:SetText(L["gearfinder_suggested_dungeon"] or "Suggested dungeon")
 	MF.DungeonName:SetText("")
 	MF.DungeonDesc:SetText("")

@@ -164,6 +164,13 @@ This addon is fully open source and can be inspected before use.
 
 ## Changelog
 
+### Revision 154 - 3.0.154
+
+- Expanded Gear Finder footer artwork so every suggestable dungeon and raid source resolves to an existing guide image, including Classic, TBC, WotLK raids, and world-boss style sources.
+- Reworked the recommended dungeon footer background into a full-width image treatment with a UI-color-to-art gradient while keeping the dungeon title, summary, and recommendation reason readable.
+- Added level-appropriate fallback footer artwork for the no-recommendation state and removed the hardcoded Icecrown debug placeholder.
+- Updated addon version metadata to 3.0.154.
+
 ### Revision 153 - 3.0.153
 
 - Remastered the Gear Finder presentation with a cleaner two-column card layout, centered title treatment, warmer remaster-aligned panel colors, and a more intentional footer hierarchy.
