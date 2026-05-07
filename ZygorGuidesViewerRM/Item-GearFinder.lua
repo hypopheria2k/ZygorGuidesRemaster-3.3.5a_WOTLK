@@ -55,6 +55,7 @@ end
 
 local GF_StaticBossNames = {
 	[23953]="Prince Keleseth",[23954]="Ingvar the Plunderer",[24200]="Skarvald the Constructor",
+	[25462]="The Lich King",
 	[26529]="Meathook",[26530]="Salramm the Fleshcrafter",[26532]="Chrono-Lord Epoch",[26533]="Mal'Ganis",
 	[26630]="Trollgore",[26631]="Novos the Summoner",[26632]="The Prophet Tharon'ja",[26668]="Svala Sorrowgrave",
 	[26687]="Gortok Palehoof",[26693]="Skadi the Ruthless",[26723]="Keristrasza",[26731]="Grand Magus Telestra",
@@ -189,6 +190,24 @@ local function GF_StripLink(itemlink)
 		return "item:" .. result
 	end
 	return itemlink
+end
+
+local function GF_GetItemID(itemlink)
+	if type(itemlink) == "number" then return itemlink end
+	if ZGV.ItemLink and ZGV.ItemLink.GetItemID then
+		local itemid = ZGV.ItemLink.GetItemID(itemlink)
+		if itemid then return tonumber(itemid) end
+	end
+	return tonumber(tostring(itemlink or ""):match("item:(%d+)") or tostring(itemlink or ""):match("^(%d+)$"))
+end
+
+local function GF_IsKnownClientItem(itemlink)
+	local itemid = GF_GetItemID(itemlink)
+	if not itemid then return true end
+	if (GearFinder.CurrentExpansion or 2) <= 2 and itemid > 55000 then
+		return false, "post-WotLK item id"
+	end
+	return true
 end
 
 local function GF_EvaluateUpgrade(itemlink, future)
@@ -1794,6 +1813,7 @@ function GearFinder:ScoreDungeonItems()
 	local faction = self.playerfaction=="Alliance" and 1 or 2
 	local sourceInstances, validDungeons, futureDungeons, validVendorSources, vendorItems, craftedItems = 0, 0, 0, 0, 0, 0
 	local craftedSourceCount, validCraftedSources, craftedSkippedItems = 0, 0, 0
+	local skippedOutOfEraItems = 0
 	local invalidReasons = {}
 
 	-- 3.3.5a: no mythic+, no modified instances
@@ -1812,13 +1832,17 @@ function GearFinder:ScoreDungeonItems()
 					if player_items then
 						for _,itemlink in pairs(player_items) do
 							if type(itemlink)=="number" then itemlink = "item:"..itemlink end
-							if GF_ShouldIncludeCandidate(itemlink, false) then
+							local knownClientItem, knownClientReason = GF_IsKnownClientItem(itemlink)
+							if knownClientItem and GF_ShouldIncludeCandidate(itemlink, false) then
 								-- 3.3.5a: no level scaling, no mythic bonuses
 								local qname
 								if bossdata.quest and bossdata.quest[faction] then
 									qname = ZGV.QuestDB and ZGV.QuestDB:GetQuestName(bossdata.quest[faction])
 								end
 								table.insert(GearFinder.ItemsToScore[ident],{itemlink=itemlink,boss=bossdata.boss, bossname=GF_GetBossNameFromID(bossdata.boss, bossdata.name), encounterId=bossdata.encounterId, quest=bossdata.quest and bossdata.quest[faction], questname=qname})
+							elseif not knownClientItem then
+								skippedOutOfEraItems = skippedOutOfEraItems + 1
+								invalidReasons[knownClientReason or "out-of-era item"] = (invalidReasons[knownClientReason or "out-of-era item"] or 0) + 1
 							end
 						end
 					end
@@ -1839,13 +1863,17 @@ function GearFinder:ScoreDungeonItems()
 					if player_items then
 						for _,itemlink in pairs(player_items) do
 							if type(itemlink)=="number" then itemlink = "item:"..itemlink end
-							if GF_ShouldIncludeCandidate(itemlink, true) then
+							local knownClientItem, knownClientReason = GF_IsKnownClientItem(itemlink)
+							if knownClientItem and GF_ShouldIncludeCandidate(itemlink, true) then
 								-- 3.3.5a: no level scaling, no mythic bonuses
 								local qname
 								if bossdata.quest and bossdata.quest[faction] then
 									qname = ZGV.QuestDB and ZGV.QuestDB:GetQuestName(bossdata.quest[faction])
 								end
 								table.insert(GearFinder.ItemsToMaybeScore[ident],{itemlink=itemlink,boss=bossdata.boss, bossname=GF_GetBossNameFromID(bossdata.boss, bossdata.name), encounterId=bossdata.encounterId, quest=bossdata.quest and bossdata.quest[faction], questname=qname})
+							elseif not knownClientItem then
+								skippedOutOfEraItems = skippedOutOfEraItems + 1
+								invalidReasons[knownClientReason or "out-of-era item"] = (invalidReasons[knownClientReason or "out-of-era item"] or 0) + 1
 							end
 						end
 					end
@@ -1865,7 +1893,8 @@ function GearFinder:ScoreDungeonItems()
 			GearFinder.VendorItemsToScore[ident] = GearFinder.VendorItemsToScore[ident] or {}
 			for itemid, itemSource in pairs(source.items or {}) do
 				local itemlink = "item:" .. tostring(itemid)
-				if GF_ShouldIncludeCandidate(itemlink, false) then
+				local knownClientItem, knownClientReason = GF_IsKnownClientItem(itemlink)
+				if knownClientItem and GF_ShouldIncludeCandidate(itemlink, false) then
 					table.insert(GearFinder.VendorItemsToScore[ident], {
 						itemlink = itemlink,
 						sourceType = source.sourceType or "currency",
@@ -1880,6 +1909,9 @@ function GearFinder:ScoreDungeonItems()
 						vendorWaypoint = itemSource.vendorWaypoint or vendor.waypoint,
 					})
 					vendorItems = vendorItems + 1
+				elseif not knownClientItem then
+					skippedOutOfEraItems = skippedOutOfEraItems + 1
+					invalidReasons[knownClientReason or "out-of-era item"] = (invalidReasons[knownClientReason or "out-of-era item"] or 0) + 1
 				end
 			end
 		else
@@ -1898,7 +1930,8 @@ function GearFinder:ScoreDungeonItems()
 				local itemValid, itemComment = GF_IsValidCraftedItem(source, itemSource)
 				if itemValid then
 					local itemlink = "item:" .. tostring(itemid)
-					if GF_ShouldIncludeCandidate(itemlink, false) then
+					local knownClientItem, knownClientReason = GF_IsKnownClientItem(itemlink)
+					if knownClientItem and GF_ShouldIncludeCandidate(itemlink, false) then
 						table.insert(GearFinder.VendorItemsToScore[ident], {
 							itemlink = itemlink,
 							sourceType = source.sourceType or "crafted",
@@ -1916,6 +1949,9 @@ function GearFinder:ScoreDungeonItems()
 						})
 						vendorItems = vendorItems + 1
 						craftedItems = craftedItems + 1
+					elseif not knownClientItem then
+						skippedOutOfEraItems = skippedOutOfEraItems + 1
+						invalidReasons[knownClientReason or "out-of-era item"] = (invalidReasons[knownClientReason or "out-of-era item"] or 0) + 1
 					end
 				else
 					craftedSkippedItems = craftedSkippedItems + 1
@@ -1936,6 +1972,7 @@ function GearFinder:ScoreDungeonItems()
 	GearFinder.DebugSummary.craftedSourceCount = craftedSourceCount
 	GearFinder.DebugSummary.validCraftedSources = validCraftedSources
 	GearFinder.DebugSummary.craftedSkippedItems = craftedSkippedItems
+	GearFinder.DebugSummary.skippedOutOfEraItems = skippedOutOfEraItems
 	GearFinder.DebugSummary.invalidReasons = invalidReasons
 	GearFinder.DebugSummary.gear1 = ZGV.db and ZGV.db.profile and ZGV.db.profile.gear_1 and true or false
 	GearFinder.DebugSummary.gear2 = ZGV.db and ZGV.db.profile and ZGV.db.profile.gear_2 and true or false
@@ -2552,6 +2589,18 @@ local diff_to_name = {
 	[16]=PLAYER_DIFFICULTY6,
 }
 
+local function GF_FormatDungeonDisplayName(dungeon)
+	if not dungeon then return L["gearfinder_label_unknown"] or "unknown" end
+	local name = dungeon.name or (L["gearfinder_label_unknown"] or "unknown")
+	if tonumber(dungeon.difficulty) == 2 then
+		local heroic = PLAYER_DIFFICULTY2 or "Heroic"
+		if not tostring(name):lower():find(tostring(heroic):lower(), 1, true) then
+			return ("%s (%s)"):format(name, heroic)
+		end
+	end
+	return name
+end
+
 local function GF_GetDungeonReasonText(bestCount, bestWeight)
 	if not bestCount or bestCount <= 0 then return nil end
 	if bestWeight and bestWeight > 0 then
@@ -2716,7 +2765,7 @@ function GearFinder:DisplayResults()
 			end
 
 			local dungeon = GF_GetDungeonData(upgrade.ident)
-			button.itemdungeon:SetText((dungeon and dungeon.name) or (L["gearfinder_label_unknown"] or "unknown"))
+			button.itemdungeon:SetText(GF_FormatDungeonDisplayName(dungeon))
 
 			if upgrade.sourceType == "currency" then
 				button.dungeonguide = nil

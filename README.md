@@ -164,6 +164,13 @@ This addon is fully open source and can be inspected before use.
 
 ## Changelog
 
+### Revision 157 - 3.0.157
+
+- Added a WotLK client guard in Gear Finder so later-client imported dungeon item IDs are skipped instead of being considered for 3.3.5a recommendations.
+- Corrected additional WotLK dungeon boss fallback IDs for Nexus, Azjol-Nerub, Halls of Stone, Halls of Reflection, and Trial of the Champion result labels.
+- Added a Heroic difficulty suffix to Gear Finder item rows when a recommendation comes from the heroic version of a dungeon.
+- Updated addon version metadata to 3.0.157.
+
 ### Revision 156 - 3.0.156
 
 - Added profession-crafted Gear Finder sources with separate options for crafted items, leveling crafts, and PvP starter crafted sets.
