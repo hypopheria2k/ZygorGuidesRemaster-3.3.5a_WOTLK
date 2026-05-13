@@ -1,4 +1,4 @@
-﻿# Zygor Guides Viewer Remaster
+# Zygor Guides Viewer Remaster
 
 Remastered Zygor Guides Viewer for **World of Warcraft: Wrath of the Lich King (WotLK) 3.3.5a (build 12340)**.
 
@@ -164,6 +164,14 @@ This addon is fully open source and can be inspected before use.
 
 ## Changelog
 
+### Revision 169 - 3.0.169
+
+- Added an off-by-default Gear Finder `Prefer tier progression` mode that keeps the default best-path ranking unchanged unless enabled.
+- Tier progression now prefers base WotLK dungeon/heroic progression, treats Trial of the Champion, Forge of Souls, Pit of Saron, and Halls of Reflection as catch-up 5-mans, and falls forward per slot only when no upgrade exists in the current progression band.
+- Excluded raid-crafted items from tier-progression recommendations while preserving them for the default best-path mode.
+- Added race-mask validation from `ZygorItemDB.lua` so Gear Finder rejects race-locked items the current character cannot equip.
+- Updated addon version metadata to 3.0.169.
+
 ### Revision 168 - 3.0.168
 
 - Added 76 additional missing item database records from `check_result (1).md` after verifying each item ID/name against WotLKDB.
@@ -190,12 +198,6 @@ This addon is fully open source and can be inspected before use.
 - Added missing item database records for `23478` Recruit's Pants, `23479` Recruit's Robe, `1374` Frayed Shoes, and `2650` Flimsy Chain Boots.
 - Updated `ZygorItemDB.lua` metadata to `2026-05-13 09:12:38 -05:00` and `24937 Items`.
 - Updated addon version metadata to 3.0.165.
-
-### Revision 164 - 3.0.164
-
-- Added a small remaster compact-view spacing adjustment for 1-5 step mode so each inline step background/border has extra padding around the text.
-- Increased compact step breathing room to 3px top/bottom padding and a 6px horizontal text inset without changing the full "show all steps" layout.
-- Updated addon version metadata to 3.0.164.
 
 ## Notes
 

@@ -1027,6 +1027,49 @@ local PHASE_PRIORITY = {
 	wotlk5 = 5,
 }
 
+local WOTLK_CATCHUP_DUNGEONS = {
+	[650] = true, ["650H"] = true, -- Trial of the Champion
+	[632] = true, ["632H"] = true, -- The Forge of Souls
+	[658] = true, ["658H"] = true, -- Pit of Saron
+	[668] = true, ["668H"] = true, -- Halls of Reflection
+}
+
+local function get_progression_priority(item)
+	if item and item.sourceType == "currency" then return 0, 0, 0, 0, 0 end
+	if item and item.sourceType == "crafted" then
+		if item.craftedCategory == "pre_raid" or item.craftedCategory == "leveling" then return 1, 0, 0, 0, 0 end
+		if item.bind == "boe" then return 2, 0, 0, 0, 0 end
+		if item.professionOnly or item.bind == "bop" then return 3, 0, 0, 0, 0 end
+		if item.craftedCategory == "raid" then return 55, 0, 0, 0, 0 end
+		if item.craftedCategory == "pvp" then return 56, 0, 0, 0, 0 end
+		return 2, 0, 0, 0, 0
+	end
+
+	local dungeon = item and item.ident and GF_GetDungeonData(item.ident)
+	if not dungeon then return 99, 99, 99, 99, 99 end
+
+	local difficulty = tonumber(dungeon.difficulty) or 99
+	local phase = PHASE_PRIORITY[dungeon.phase] or 99
+	local minLevel = tonumber(dungeon.minLevel) or 0
+	local levelGap = math.max(0, minLevel - (tonumber(ItemScore.playerlevel) or 0))
+	local ident = item.ident
+	local tier
+
+	if dungeon.expansionLevel == 2 and WOTLK_CATCHUP_DUNGEONS[ident] then
+		tier = difficulty == 1 and 50 or 51
+	elseif difficulty == 1 then
+		tier = 10
+	elseif difficulty == 2 then
+		tier = 20
+	elseif difficulty >= 3 then
+		tier = 30 + (phase * 10) + math.max(0, difficulty - 3)
+	else
+		tier = 90
+	end
+
+	return tier, phase, difficulty, levelGap, minLevel
+end
+
 local function get_access_priority(item)
 	if item and item.sourceType == "currency" then return 0, 0, 0, 0, 0 end
 	if item and item.sourceType == "crafted" then
@@ -1063,6 +1106,10 @@ local function is_more_accessible(a, b)
 	if ar4 ~= br4 then return ar4 < br4 end
 	if ar5 ~= br5 then return ar5 < br5 end
 	return false
+end
+
+local function is_tier_progression_mode()
+	return ZGV.db and ZGV.db.profile and ZGV.db.profile.gear_tier_progression_mode == true
 end
 
 local function get_practical_score(item)
@@ -1124,6 +1171,29 @@ local function compare_practical_upgrade(slot, a, b)
 	return (tonumber(a.itemlvl) or 0) > (tonumber(b.itemlvl) or 0)
 end
 
+local function compare_tier_progression_upgrade(slot, a, b)
+	local ar1, ar2, ar3, ar4, ar5 = get_progression_priority(a)
+	local br1, br2, br3, br4, br5 = get_progression_priority(b)
+	if ar1 ~= br1 then return ar1 < br1 end
+	if ar2 ~= br2 then return ar2 < br2 end
+	if ar3 ~= br3 then return ar3 < br3 end
+	if ar4 ~= br4 then return ar4 < br4 end
+	if ar5 ~= br5 then return ar5 < br5 end
+	if is_more_accessible(a,b) then
+		return true
+	elseif is_more_accessible(b,a) then
+		return false
+	end
+	return compare_practical_upgrade(slot, a, b)
+end
+
+local function compare_current_upgrade(slot, a, b)
+	if is_tier_progression_mode() then
+		return compare_tier_progression_upgrade(slot, a, b)
+	end
+	return (tonumber(a.score) or 0) > (tonumber(b.score) or 0)
+end
+
 local function same_access_tier(a, b)
 	local ar1, ar2, ar3, ar4, ar5 = get_access_priority(a)
 	local br1, br2, br3, br4, br5 = get_access_priority(b)
@@ -1138,6 +1208,75 @@ local function prune_to_best_content_tier(queue)
 			table.remove(queue, idx)
 		end
 	end
+end
+
+local function get_progression_band_cap()
+	if not is_tier_progression_mode() then return nil end
+	local bestDungeonTier
+	local function scan_queue(queue)
+		if not queue then return end
+		for _, item in ipairs(queue) do
+			if item.sourceType ~= "crafted" and item.sourceType ~= "currency" then
+				local tier = get_progression_priority(item)
+				if tier >= 10 and tier < 90 and (not bestDungeonTier or tier < bestDungeonTier) then
+					bestDungeonTier = tier
+				end
+			end
+		end
+	end
+	for _, queue in pairs(GearFinder.UpgradeQueue or {}) do scan_queue(queue) end
+	for _, queue in pairs(GearFinder.FallbackQueue or {}) do scan_queue(queue) end
+	if not bestDungeonTier then return nil end
+	if bestDungeonTier <= 20 then return 20 end
+	if bestDungeonTier < 50 then return 49 end
+	if bestDungeonTier < 60 then return 59 end
+	return bestDungeonTier
+end
+
+local function prune_to_progression_band(slot, queue, cap)
+	if not queue or not cap then return end
+	local keepTier
+	for _, item in ipairs(queue) do
+		if not (item.sourceType == "crafted" and item.craftedCategory == "raid") then
+			local tier = get_progression_priority(item)
+			if tier <= cap then
+				keepTier = cap
+				break
+			elseif tier < 90 and (not keepTier or tier < keepTier) then
+				keepTier = tier
+			end
+		end
+	end
+	if not keepTier then
+		keepTier = cap
+	end
+
+	local removed = false
+	for idx = #queue, 1, -1 do
+		local tier = get_progression_priority(queue[idx])
+		local remove = queue[idx].sourceType == "crafted" and queue[idx].craftedCategory == "raid"
+		if not remove then
+			if keepTier == cap then
+				remove = tier > cap
+			else
+				remove = tier ~= keepTier
+			end
+		end
+		if remove then
+			table.remove(queue, idx)
+			removed = true
+		end
+	end
+	if removed and not queue[1] then
+		set_slot_reject(slot, "No upgrade found in current progression tier")
+	end
+end
+
+local function prune_all_to_progression_band()
+	local cap = get_progression_band_cap()
+	if not cap then return end
+	for slot, queue in pairs(GearFinder.UpgradeQueue or {}) do prune_to_progression_band(slot, queue, cap) end
+	for slot, queue in pairs(GearFinder.FallbackQueue or {}) do prune_to_progression_band(slot, queue, cap) end
 end
 
 local function get_equipped_item_details(slot)
@@ -1531,11 +1670,17 @@ local function loot_score_dungeon_thread()
 	ZGV:Debug("&gear scoring current took %d",t2-GearFinder.TimeScoreStart)
 
 	for i,slotupgrades in pairs(GearFinder.UpgradeQueue) do 
-		table.sort(slotupgrades,function(a,b) return a.score>b.score end)
+		table.sort(slotupgrades,function(a,b) return compare_current_upgrade(i, a, b) end)
 	end
 	for i,slotupgrades in pairs(GearFinder.FallbackQueue) do
-		table.sort(slotupgrades,function(a,b) return get_fallback_metric(a) > get_fallback_metric(b) end)
+		table.sort(slotupgrades,function(a,b)
+			if is_tier_progression_mode() then
+				return compare_tier_progression_upgrade(i, a, b)
+			end
+			return get_fallback_metric(a) > get_fallback_metric(b)
+		end)
 	end
+	prune_all_to_progression_band()
 
 	-- remove duplicates from primary/secondary slots
 	for first,second in pairs(slot_pairs) do
@@ -1687,7 +1832,7 @@ local function loot_score_dungeon_thread()
 			elseif a.future ~= b.future then
 				return not a.future
 			else
-				return compare_practical_upgrade(i, a, b)
+				return compare_current_upgrade(i, a, b)
 			end
 		end)
 		prune_to_best_content_tier(slotupgrades)
@@ -1705,11 +1850,15 @@ local function loot_score_dungeon_thread()
 			elseif a.future ~= b.future then
 				return not a.future
 			else
+				if is_tier_progression_mode() then
+					return compare_tier_progression_upgrade(i, a, b)
+				end
 				return compare_practical_upgrade(i, a, b)
 			end
 		end)
 		prune_to_best_content_tier(slotupgrades)
 	end
+	prune_all_to_progression_band()
 
 	local t3 = debugprofilestop()
 	ZGV:Debug("&gear scoring future took %d",t3-t2)
@@ -2837,7 +2986,13 @@ function GearFinder:DisplayResults()
 				button.bisicon:SetVertexColor(1.0, 0.84, 0.15, 1.0)
 				button.bisicon:SetDesaturated(false)
 			else
-				button.itemencounter:SetText(get_slot_debug_reason(slotID))
+				local reason = get_slot_debug_reason(slotID)
+				if reason == "No upgrade found in current progression tier" then
+					button.itemdungeon:SetText(reason)
+					button.itemencounter:SetText(" ")
+				else
+					button.itemencounter:SetText(reason)
+				end
 				button.bisTooltipText = nil
 				button.bisbadge:Hide()
 			end

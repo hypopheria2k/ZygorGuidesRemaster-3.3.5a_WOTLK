@@ -229,6 +229,7 @@ function me:Options_RegisterDefaults()
 			gear_crafted_items = true,
 			gear_crafted_leveling_items = true,
 			gear_crafted_pvp_items = true,
+			gear_tier_progression_mode = false,
 			itemscore_tooltips = true,
 			itemscore_tooltips_allbuilds = false,
 			masterloot_notices = true,
@@ -2593,6 +2594,15 @@ function me:Options_DefineOptions()
 				order = 9,
 				type = "description",
 				name = "Choose which dungeon and raid difficulties Gear Finder can suggest.",
+			},
+			gear_tier_progression_mode = {
+				order = 9.5,
+				name = "Prefer tier progression",
+				desc = "Recommend upgrades from earlier accessible content tiers before higher catch-up tiers. Leave this off to keep the default best-path ranking.",
+				type = "toggle",
+				width = "full",
+				set = function(i,v) Setter_Simple(i,v) if ZGV.ItemScore and ZGV.ItemScore.GearFinder then ZGV.ItemScore.GearFinder:RefreshAfterSourceSettingChange() end end,
+				disabled = function() return not self.db.profile.autogear end,
 			},
 			dungeonheader = {
 				order = 10,

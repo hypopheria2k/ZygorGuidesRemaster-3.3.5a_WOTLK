@@ -320,6 +320,19 @@ local DB_CLASS_BITS = {
 	{2048, "DEATHKNIGHT"},
 }
 
+local DB_RACE_BITS = {
+	{1, "Human", "HUMAN"},
+	{2, "Orc", "ORC"},
+	{4, "Dwarf", "DWARF"},
+	{8, "NightElf", "NIGHTELF"},
+	{16, "Scourge", "UNDEAD"},
+	{32, "Tauren", "TAUREN"},
+	{64, "Gnome", "GNOME"},
+	{128, "Troll", "TROLL"},
+	{512, "BloodElf", "BLOODELF"},
+	{1024, "Draenei", "DRAENEI"},
+}
+
 local ARMOR_FAMILY_ORDER
 local bit_band = (bit and bit.band) or (bit32 and bit32.band)
 local missing_itemdb_warnings = {}
@@ -360,6 +373,28 @@ local function db_mask_to_classes(mask)
 	end
 	if #classes == 0 then return nil end
 	return table.concat(classes, ", ")
+end
+
+local function normalize_race_token(value)
+	if not value then return nil end
+	return tostring(value):gsub("%s+", ""):gsub("_", ""):upper()
+end
+
+local function db_mask_allows_race(mask, raceName, raceToken)
+	if not mask or not bit_band then return true end
+	mask = tonumber(mask)
+	if not mask or mask == -1 then return true end
+	local wantedName = normalize_race_token(raceName)
+	local wantedToken = normalize_race_token(raceToken)
+	for _, data in ipairs(DB_RACE_BITS) do
+		if bit_band(mask, data[1]) ~= 0 then
+			if wantedName == normalize_race_token(data[2]) or wantedToken == normalize_race_token(data[2])
+				or wantedName == normalize_race_token(data[3]) or wantedToken == normalize_race_token(data[3]) then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 local function flush_missing_itemdb_warnings()
@@ -568,6 +603,7 @@ function ItemScore:GetItemDetailsFromDB(itemLinkOrID)
 		texture = GetItemIcon and GetItemIcon(itemID) or nil,
 		itemlvl = dbsource.i,
 		playerclass = db_mask_to_classes(dbsource.cl),
+		allowableRaceMask = dbsource.rc,
 		playerspec = nil,
 		requires_detail = nil,
 		needs_exact_stats = ((dbsource.rp and dbsource.rp ~= 0) or (dbsource.sc and dbsource.sc ~= 0)) and true or false,
@@ -1261,6 +1297,8 @@ function ItemScore:BuildRuleContext(classToken, buildNum, level)
 		playerlevel = level,
 		playerclassName = self.playerclassName,
 		playerclass = self.playerclass,
+		playerraceName = self.playerraceName,
+		playerraceToken = self.playerraceToken,
 		playerspecName = self:GetBuildName(classToken, resolvedBuild, level, usesFallback),
 		ActiveRuleSet = {
 			itemtypes = copy_simple_table(rules.itemtypes),
@@ -1358,6 +1396,10 @@ function ItemScore:GetItemValidityForContext(itemlink, future, context)
 		if not validclass then
 			return {valid = false, final = true, reason = "wrong class", code = "class", item = item, slot = slot_1, slot_2 = slot_2, twohander = twohander}
 		end
+	end
+
+	if not db_mask_allows_race(item.allowableRaceMask, context.playerraceName, context.playerraceToken) then
+		return {valid = false, final = true, reason = "wrong race", code = "race", item = item, slot = slot_1, slot_2 = slot_2, twohander = twohander}
 	end
 
 	if item.playerspec and item.playerspec ~= context.playerspecName then
@@ -2126,6 +2168,7 @@ end
 function ItemScore:SetStatWeights(playerclass,playerspec,playerlevel)
 	self.playerclass = playerclass or (select(2,UnitClass("player")))
 	self.playerclassName = (select(1,UnitClass("player")))
+	self.playerraceName, self.playerraceToken = UnitRace("player")
 	self.playerclassNum = (self.playerclass and ZGV.ClassToNumber and ZGV.ClassToNumber[self.playerclass]) or 1
 	local fakeLevel = tonumber(ZGV.db.char.fakelevel or 0) or 0
 	self.playerlevel = tonumber(playerlevel) or ((fakeLevel > 0 and fakeLevel) or UnitLevel("player"))
@@ -2354,6 +2397,8 @@ function ItemScore:GetItemDetailsQueued(itemlink,force)
 				itemlvl = itemlvl,
 				minlevel = itemMinLevel,
 				name = itemName,
+				playerclass = dbitem and dbitem.playerclass,
+				allowableRaceMask = dbitem and dbitem.allowableRaceMask,
 				needs_exact_stats = false,
 				needs_live_scan = false,
 			}
@@ -2493,6 +2538,7 @@ function ItemScore:GetItemDetailsQueued(itemlink,force)
 			texture = texture,
 			itemlvl = itemlvl,
 			playerclass = playerclass or (dbitem and dbitem.playerclass),
+			allowableRaceMask = dbitem and dbitem.allowableRaceMask,
 			playerspec = playerspec,
 			requires_detail = requires_detail,
 			name = itemName,
@@ -2688,6 +2734,19 @@ function ItemScore:GetItemValidity(itemlink, future)
 				twohander = twohander,
 			}
 		end
+	end
+
+	if not db_mask_allows_race(item.allowableRaceMask, self.playerraceName, self.playerraceToken) then
+		return {
+			valid = false,
+			final = true,
+			reason = "wrong race",
+			code = "race",
+			item = item,
+			slot = slot_1,
+			slot_2 = slot_2,
+			twohander = twohander,
+		}
 	end
 
 	if item.playerspec and item.playerspec ~= self.playerspecName then
