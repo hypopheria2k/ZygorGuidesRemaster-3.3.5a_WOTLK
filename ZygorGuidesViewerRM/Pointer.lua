@@ -51,6 +51,12 @@ local RETAIL_REMASTER_ARROW = {
 
 local RETAIL_REMASTER_ARROW_STEP = 360 / (RETAIL_REMASTER_ARROW.spritecount * 2 - 2)
 local RETAIL_REMASTER_ARROW_DEG_COORDS = {}
+local DEFAULT_ARROW_BAD = {1,0,0}
+local DEFAULT_ARROW_MID = {0.8,0.7,0}
+local DEFAULT_ARROW_GOOD = {0,1,0}
+local DEFAULT_DIST_BAD = {1.0,0.5,0.4}
+local DEFAULT_DIST_MID = {1.0,0.9,0.5}
+local DEFAULT_DIST_GOOD = {0.7,1.0,0.6}
 
 do
 	-- Build sprite coords exactly like retail CreateSprite + SetBounce + ConvertSpritesForArrows.
@@ -1901,11 +1907,18 @@ function Pointer:GetArrowRefreshInterval()
 	if rate == 0 then return 0 end
 	if rate == 60 then return 1/60 end
 	if rate == 30 then return 1/30 end
+	if rate == 10 then return 0.1 end
 	return 0.05
 end
 
 function Pointer:ResetArrowRefreshThrottle()
 	arrowctrl_elapsed = 0
+	if self.ArrowFrame then
+		self.ArrowFrame._labelElapsed = nil
+		self.ArrowFrame._lastLabelWaypoint = nil
+		self.ArrowFrame._lastTitleText = nil
+		self.ArrowFrame._lastDescText = nil
+	end
 end
 
 function Pointer.ArrowFrameControl_OnUpdate(self,elapsed)
@@ -1973,6 +1986,12 @@ function Pointer.ArrowFrame_OnUpdate(self,elapsed)
 
 	self:Show()
 	Pointer:RefreshArrowStyle()
+	if self._lastLabelWaypoint ~= self.waypoint then
+		self._lastLabelWaypoint = self.waypoint
+		self._labelElapsed = 999
+		self._lastTitleText = nil
+		self._lastDescText = nil
+	end
 
 	local msin,mcos,mabs=math.sin,math.cos,math.abs
 
@@ -2047,9 +2066,9 @@ function Pointer.ArrowFrame_OnUpdate(self,elapsed)
 
 		------------ color
 		local grad = ZGV.GetArrowColorGradient and ZGV:GetArrowColorGradient() or nil
-		local ar,ag,ab = unpack((grad and grad.bad) or {1,0,0})
-		local br,bg,bb = unpack((grad and grad.mid) or {0.8,0.7,0})
-		local cr,cg,cb = unpack((grad and grad.good) or {0,1,0})
+		local ar,ag,ab = unpack((grad and grad.bad) or DEFAULT_ARROW_BAD)
+		local br,bg,bb = unpack((grad and grad.mid) or DEFAULT_ARROW_MID)
+		local cr,cg,cb = unpack((grad and grad.good) or DEFAULT_ARROW_GOOD)
 
 		local perc
 
@@ -2106,7 +2125,11 @@ function Pointer.ArrowFrame_OnUpdate(self,elapsed)
 			self.arrow:SetTexCoord(x1,x2,y1,y2)
 			self.gem:SetTexCoord(x1,x2,y1,y2)
 			self.gemhl:Hide()
-			self.gem:SetAlpha(0.45 + (msin(GetTime() * 4) + 1) * 0.12)
+			if profile.arrowpulse == false then
+				self.gem:SetAlpha(0.57)
+			else
+				self.gem:SetAlpha(0.45 + (msin(GetTime() * 4) + 1) * 0.12)
+			end
 		else
 			local sin,cos = msin(angle + 2.356194)*0.85, mcos(angle + 2.356194)*0.85
 			self.arrow:SetTexCoord(0.5-sin, 0.5+cos, 0.5+cos, 0.5+sin, 0.5-cos, 0.5-sin, 0.5+sin, 0.5-cos)
@@ -2154,9 +2177,6 @@ function Pointer.ArrowFrame_OnUpdate(self,elapsed)
 	else
 		title=nil
 	end
-
-	disttxt = Pointer:GetDistTxt(dist, self.waypoint)
-
 
 	--ZGV:Debug(("dist %.2f  chg %.2f  speed %.2f  ela %.2f"):format(dist,last_distance-dist,speed,eta_elapsed))
 	
@@ -2251,15 +2271,18 @@ function Pointer.ArrowFrame_OnUpdate(self,elapsed)
 	etadisp_elapsed = etadisp_elapsed + elapsed
 	if etadisp_elapsed >= 0.9 then
 
-		local avg=speed
-		for i=2,#speeds do avg=avg+speeds[i] end
-		avg=avg/#speeds
-
 		--ZGV:Debug("eta: #speeds="..#speeds)
-		if #speeds>=minlimit and avg>0 then
-			local eta = math.abs(dist / avg)
-			if eta<7200 and eta>0 then
-				etaval = eta
+		if #speeds>=minlimit then
+			local avg=speed
+			for i=2,#speeds do avg=avg+speeds[i] end
+			avg=avg/#speeds
+			if avg>0 then
+				local eta = math.abs(dist / avg)
+				if eta<7200 and eta>0 then
+					etaval = eta
+				else
+					etaval = nil
+				end
 			else
 				etaval = nil
 			end
@@ -2268,19 +2291,16 @@ function Pointer.ArrowFrame_OnUpdate(self,elapsed)
 		end
 		etadisp_elapsed = 0
 	end
-	etatxt = Pointer:GetETATxt(etaval)
-	local legacyDistHex = "ffcc00"
-	if type(dist)=="number" then
-		local perc = math.max(0,1-(dist/math.min(math.max(100,initialdist or 0),500)))
-		local dgrad = ZGV.GetDistanceColorGradient and ZGV:GetDistanceColorGradient() or nil
-		local bad = (dgrad and dgrad.bad) or {1.0,0.5,0.4}
-		local mid = (dgrad and dgrad.mid) or {1.0,0.9,0.5}
-		local good = (dgrad and dgrad.good) or {0.7,1.0,0.6}
-		local r,g,b = ZGV.gradient3(perc, bad[1],bad[2],bad[3], mid[1],mid[2],mid[3], good[1],good[2],good[3], 0.7)
-		legacyDistHex = ("%02x%02x%02x"):format(r*255,g*255,b*255)
-	end
 
 	-- spew it out.
+	local textRefresh = (profile and tonumber(profile.arrow_text_refresh_rate)) or 1.0
+	if textRefresh < 0 then textRefresh = 0 end
+	self._labelElapsed = (self._labelElapsed or 0) + elapsed
+	if textRefresh > 0 and self._labelElapsed < textRefresh then return end
+	self._labelElapsed = 0
+
+	disttxt = Pointer:GetDistTxt(dist, self.waypoint)
+	etatxt = Pointer:GetETATxt(etaval)
 	if self._retail_style then
 		local showTitle = RemasterFormatTitle(title,self.waypoint)
 		local desc = ""
@@ -2288,29 +2308,60 @@ function Pointer.ArrowFrame_OnUpdate(self,elapsed)
 		if type(dist)=="number" then
 			local perc = math.max(0,1-(dist/math.min(math.max(100,initialdist or 0),500)))
 			local dgrad = ZGV.GetDistanceColorGradient and ZGV:GetDistanceColorGradient() or nil
-			local bad = (dgrad and dgrad.bad) or {1.0,0.5,0.4}
-			local mid = (dgrad and dgrad.mid) or {1.0,0.9,0.5}
-			local good = (dgrad and dgrad.good) or {0.7,1.0,0.6}
+			local bad = (dgrad and dgrad.bad) or DEFAULT_DIST_BAD
+			local mid = (dgrad and dgrad.mid) or DEFAULT_DIST_MID
+			local good = (dgrad and dgrad.good) or DEFAULT_DIST_GOOD
 			local r,g,b = ZGV.gradient3(perc, bad[1],bad[2],bad[3], mid[1],mid[2],mid[3], good[1],good[2],good[3], 0.7)
 			distcolor = ("|cff%02x%02x%02x"):format(r*255,g*255,b*255)
 		end
 		if disttxt then desc = desc .. distcolor .. disttxt .. "|r" end
 		if etatxt and etatxt ~= "" then desc = desc .. etatxt end
-		self.title:SetText(showTitle or "")
+		showTitle = showTitle or ""
+		if self._lastTitleText ~= showTitle then
+			self.title:SetText(showTitle)
+			self._lastTitleText = showTitle
+		end
 		if self.desc then
-			self.desc:SetText(desc)
+			if self._lastDescText ~= desc then
+				self.desc:SetText(desc)
+				self._lastDescText = desc
+			end
 		else
-			self.title:SetText((showTitle and (showTitle.."\n") or "") .. desc)
+			local combined = (showTitle ~= "" and (showTitle.."\n") or "") .. desc
+			if self._lastTitleText ~= combined then
+				self.title:SetText(combined)
+				self._lastTitleText = combined
+			end
 		end
 	else
+		local legacyDistHex = "ffcc00"
+		if type(dist)=="number" then
+			local perc = math.max(0,1-(dist/math.min(math.max(100,initialdist or 0),500)))
+			local dgrad = ZGV.GetDistanceColorGradient and ZGV:GetDistanceColorGradient() or nil
+			local bad = (dgrad and dgrad.bad) or DEFAULT_DIST_BAD
+			local mid = (dgrad and dgrad.mid) or DEFAULT_DIST_MID
+			local good = (dgrad and dgrad.good) or DEFAULT_DIST_GOOD
+			local r,g,b = ZGV.gradient3(perc, bad[1],bad[2],bad[3], mid[1],mid[2],mid[3], good[1],good[2],good[3], 0.7)
+			legacyDistHex = ("%02x%02x%02x"):format(r*255,g*255,b*255)
+		end
 		local legacyTitle = title and ("|cffffffff"..title.."|r") or ""
 		local legacyDesc = (disttxt and ("|cff"..legacyDistHex..disttxt.."|r") or "") .. (etatxt or "")
-		self.title:SetText(legacyTitle)
+		if self._lastTitleText ~= legacyTitle then
+			self.title:SetText(legacyTitle)
+			self._lastTitleText = legacyTitle
+		end
 		if self.desc then
-			self.desc:SetText(legacyDesc)
+			if self._lastDescText ~= legacyDesc then
+				self.desc:SetText(legacyDesc)
+				self._lastDescText = legacyDesc
+			end
 		elseif legacyDesc~="" then
 			-- Legacy fallback if desc fontstring is unavailable in a custom skin.
-			self.title:SetText(legacyTitle .. "\n" .. legacyDesc)
+			local combined = legacyTitle .. "\n" .. legacyDesc
+			if self._lastTitleText ~= combined then
+				self.title:SetText(combined)
+				self._lastTitleText = combined
+			end
 		end
 	end
 

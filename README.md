@@ -164,6 +164,13 @@ This addon is fully open source and can be inspected before use.
 
 ## Changelog
 
+### Revision 171 - 3.0.171
+
+- Reduced built-in waypoint arrow garbage generation by separating arrow direction updates from distance/title/ETA text refreshes.
+- Added guards so unchanged arrow labels are not repeatedly rewritten, reused fallback color tables in the arrow update path, and fixed ETA averaging when no speed samples are available.
+- Added arrow optimization controls: 10 FPS arrow refresh, separate Arrow Text Refresh cadence, and an Animated Arrow Pulse toggle for lower per-frame visual work.
+- Updated addon version metadata to 3.0.171.
+
 ### Revision 170 - 3.0.170
 
 - Fixed `|only if not Orc Warlock`-style race/class guide conditions so they route through the requirement matcher instead of producing invalid Lua. Thanks to Hypopheria for the report and test guide notes.

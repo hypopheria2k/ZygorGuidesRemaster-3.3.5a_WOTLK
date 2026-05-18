@@ -184,6 +184,8 @@ function me:Options_RegisterDefaults()
 			arrowoutline = false,
 			arrowoutlinemode = "default",
 			arrow_refresh_rate = 20,
+			arrow_text_refresh_rate = 1.0,
+			arrowpulse = true,
 			simplifyarrownouncolors = false,
 			remasterpointeronlegacy = false,
 			arrowscale = 1.0,
@@ -1982,6 +1984,7 @@ function me:Options_DefineOptions()
 				desc = L["opt_arrow_refresh_rate_desc"],
 				width = "double",
 				values = {
+					[10] = L["opt_arrow_refresh_rate_10"],
 					[20] = L["opt_arrow_refresh_rate_20"],
 					[30] = L["opt_arrow_refresh_rate_30"],
 					[60] = L["opt_arrow_refresh_rate_60"],
@@ -2003,8 +2006,50 @@ function me:Options_DefineOptions()
 					return self.db.profile.waypointaddon ~= "internal"
 				end,
 			},
-			arrow_note = {
+			arrow_text_refresh_rate = {
 				order = 13,
+				type = "select",
+				name = L["opt_arrow_text_refresh_rate"],
+				desc = L["opt_arrow_text_refresh_rate_desc"],
+				width = "double",
+				values = {
+					[0.25] = L["opt_arrow_text_refresh_rate_025"],
+					[0.5] = L["opt_arrow_text_refresh_rate_05"],
+					[1.0] = L["opt_arrow_text_refresh_rate_1"],
+					[2.0] = L["opt_arrow_text_refresh_rate_2"],
+					[0] = L["opt_arrow_text_refresh_rate_realtime"],
+				},
+				get = function()
+					return self.db.profile.arrow_text_refresh_rate or 1.0
+				end,
+				set = function(_,v)
+					self.db.profile.arrow_text_refresh_rate = tonumber(v) or 1.0
+					if ZGV.Pointer and ZGV.Pointer.ResetArrowRefreshThrottle then
+						ZGV.Pointer:ResetArrowRefreshThrottle()
+					end
+				end,
+				disabled = function()
+					return self.db.profile.waypointaddon ~= "internal"
+				end,
+			},
+			arrowpulse = {
+				order = 14,
+				type = "toggle",
+				name = L["opt_arrow_pulse"],
+				desc = L["opt_arrow_pulse_desc"],
+				width = "double",
+				get = function()
+					return self.db.profile.arrowpulse
+				end,
+				set = function(_,v)
+					self.db.profile.arrowpulse = not not v
+				end,
+				disabled = function()
+					return self.db.profile.waypointaddon ~= "internal"
+				end,
+			},
+			arrow_note = {
+				order = 15,
 				type = "description",
 				name = L["opt_optimization_internal_only"],
 			},
