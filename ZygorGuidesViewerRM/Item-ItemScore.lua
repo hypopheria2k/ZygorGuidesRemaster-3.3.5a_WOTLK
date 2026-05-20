@@ -884,6 +884,16 @@ local function runtime_unusable_verdict(item, slot_1, slot_2, twohander)
 	}
 end
 
+local function pending_item_details_verdict(item)
+	return {
+		valid = false,
+		final = false,
+		reason = "pending item details",
+		code = "pending_info",
+		item = item,
+	}
+end
+
 local function tooltip_line_is_red(line)
 	if not line then return false end
 	local color = tostring(line):match("|c(%x%x%x%x%x%x%x%x)")
@@ -1495,6 +1505,7 @@ function ItemScore:GetItemValidityForContext(itemlink, future, context)
 	if not context then return {valid = false, final = false, reason = "No context", code = "missing_context"} end
 	local item = ItemScore:GetResolvedItemDetails(itemlink)
 	if not item then return {valid = false, final = false, reason = "No info", code = "missing_info"} end
+	if item_needs_live_resolution(item) then return pending_item_details_verdict(item) end
 
 	local slot_1, slot_2, twohander, equippable, slotReason = get_item_slot_info(item)
 	if not equippable then
@@ -2544,6 +2555,7 @@ function ItemScore:GetItemDetailsQueued(itemlink,force)
 			if not dbitem then return false end
 			canScanTooltip = false
 		end
+		local pendingLiveScan = (not canScanTooltip and dbitem and dbitem.needs_live_scan) and true or false
 
 		local stats
 		if canScanTooltip then
@@ -2676,7 +2688,7 @@ function ItemScore:GetItemDetailsQueued(itemlink,force)
 			unusable_by_tooltip = unusable_by_tooltip,
 			name = itemName,
 			needs_exact_stats = false,
-			needs_live_scan = false,
+			needs_live_scan = pendingLiveScan,
 			fromdb = dbitem and true or false,
 		}
 
@@ -2712,6 +2724,7 @@ end
 function ItemScore:GetItemScore(itemlink,verbose)
 	local item = ItemScore:GetResolvedItemDetails(itemlink)
 	if not item then return -1, -1, false, "no info yet" end
+	if item_needs_live_resolution(item) then return -1, false, "pending item details" end
 	if not self:EnsureActiveRuleSet() then return -1, false, "no active rules" end
 
 	local stats = item.stats
@@ -2824,6 +2837,9 @@ function ItemScore:GetItemValidity(itemlink, future)
 	local item = ItemScore:GetResolvedItemDetails(itemlink)
 	if not item then
 		return {valid = false, final = false, reason = "No info", code = "missing_info"}
+	end
+	if item_needs_live_resolution(item) then
+		return pending_item_details_verdict(item)
 	end
 
 	local slot_1, slot_2, twohander, equippable, slotReason = get_item_slot_info(item)

@@ -164,6 +164,12 @@ This addon is fully open source and can be inspected before use.
 
 ## Changelog
 
+### Revision 178 - 3.0.178
+
+- Changed Gear Advisor item resolution so DB-only fallback gear records remain pending until Blizzard/tooltip item details are available.
+- Pending gear records are no longer eligible for advisor validity or score comparisons, preventing armor-only fallback data from recommending unusable leather/mail items to cloth-only classes.
+- Updated addon version metadata to 3.0.178.
+
 ### Revision 177 - 3.0.177
 
 - Added a Gear Advisor tooltip-color guard so items with Blizzard-red unusable armor or weapon type lines are rejected before scoring.
@@ -318,33 +324,3 @@ This remaster focuses on UI/UX modernization, packaging quality, compatibility m
 
 <img width="433" height="247" alt="image" src="https://github.com/user-attachments/assets/579b6acb-df5e-4f40-8ef3-7d6b33e1015d" />
 <img width="436" height="248" alt="image" src="https://github.com/user-attachments/assets/a845b881-2831-43e3-bd26-5287f9783d68" />
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
