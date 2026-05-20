@@ -811,6 +811,28 @@ local function debug_color_string(fontString)
 	return ("%03d,%03d,%03d"):format((r or 0) * 255, (g or 0) * 255, (b or 0) * 255)
 end
 
+local function tooltip_font_string_is_red(fontString)
+	if not fontString or not fontString.GetTextColor then return false end
+	local r, g, b = fontString:GetTextColor()
+	if not r then return false end
+	return r >= 0.75 and (g or 0) <= 0.25 and (b or 0) <= 0.25
+end
+
+local function tooltip_line_marks_unusable_item_subtype(lineNumber)
+	if not Gratuity or not Gratuity.vars then return false end
+	local rightLine = Gratuity.vars.Rlines and Gratuity.vars.Rlines[lineNumber]
+	if not rightLine or not rightLine.GetText or not rightLine:GetText() then return false end
+	if not tooltip_font_string_is_red(rightLine) then return false end
+
+	local leftLine = Gratuity.vars.Llines and Gratuity.vars.Llines[lineNumber]
+	local leftText = leftLine and leftLine.GetText and leftLine:GetText()
+	if not leftText or leftText == "" then return false end
+
+	-- WotLK item tooltips put slot on the left and armor/weapon subtype on the right
+	-- near the top. A red right-side subtype means the character cannot equip it.
+	return lineNumber <= 3
+end
+
 local function debug_api_call(func, ...)
 	if not func then return "n/a" end
 	local result = {pcall(func, ...)}
@@ -868,7 +890,7 @@ function ItemScore:DebugGearItem(input)
 	print(("ZGD 1/9 input=%s id=%s locale=%s player=%s/%s level=%s build=%s"):format(debug_text(itemlink), debug_num(itemID), debug_text(GetLocale and GetLocale()), debug_text(self.playerclass), debug_text(self.playerclassName), debug_num(self.playerlevel), debug_num(ZGV.db and ZGV.db.char and ZGV.db.char.gear_active_build)))
 	print(("ZGD 2/9 DB found=%s name=%s slot=%s q=%s ilvl=%s req=%s cl=%s rc=%s armor=%s weapon=%s"):format(debug_bool(dbsource ~= nil), debug_text(dbsource and dbsource.n), debug_text(dbsource and dbsource.s), debug_num(dbsource and dbsource.q), debug_num(dbsource and dbsource.i), debug_num(dbsource and dbsource.rl), debug_num(dbsource and dbsource.cl), debug_num(dbsource and dbsource.rc), debug_num(dbsource and dbsource.ar), debug_bool(dbsource and dbsource.w ~= nil)))
 	print(("ZGD 3/9 GII name=%s type=%s subtype=%s equip=%s q=%s ilvl=%s req=%s tex=%s"):format(debug_text(gii[1]), debug_text(gii[6]), debug_text(gii[7]), debug_text(gii[9]), debug_num(gii[3]), debug_num(gii[4]), debug_num(gii[5]), debug_num(gii[10])))
-	print(("ZGD 4/9 item name=%s fromdb=%s pending=%s exact=%s class=%s subclass=%s family=%s subtype=%s equip=%s"):format(debug_text(item and item.name), debug_bool(item and item.fromdb), debug_bool(item and item.needs_live_scan), debug_bool(item and item.needs_exact_stats), debug_num(item and item.class), debug_num(item and item.subclass), debug_text(family), debug_text(item and item.subtype), debug_text(item and (item.equiploc or item.type))))
+	print(("ZGD 4/9 item name=%s fromdb=%s pending=%s exact=%s class=%s subclass=%s family=%s subtype=%s equip=%s tipUnusable=%s"):format(debug_text(item and item.name), debug_bool(item and item.fromdb), debug_bool(item and item.needs_live_scan), debug_bool(item and item.needs_exact_stats), debug_num(item and item.class), debug_num(item and item.subclass), debug_text(family), debug_text(item and item.subtype), debug_text(item and (item.equiploc or item.type)), debug_bool(item and item.unusable_by_tooltip)))
 	print(("ZGD 5/9 validity valid=%s final=%s code=%s reason=%s equippable=%s slotReason=%s slot1=%s slot2=%s 2h=%s classFamilyAllowed=%s"):format(debug_bool(validity and validity.valid), debug_bool(validity and validity.final), debug_text(validity and validity.code), debug_text(validity and validity.reason), debug_bool(equippable), debug_text(slotReason), debug_num(slot_1), debug_num(slot_2), debug_bool(twohander), debug_bool(standardAllowed)))
 	print(("ZGD 6/9 score=%s scored=%s comment=%s armor=%s dps=%s blizzStats=%s"):format(debug_num(score), debug_bool(scored), debug_text(scoreComment), debug_num(item and item.stats and item.stats.ARMOR), debug_num(item and item.stats and item.stats.DAMAGE_PER_SECOND), debug_num(blizzStatCount)))
 	print(("ZGD 7/9 APIs usable=%s equippable=%s canEquip=%s equip1=%s equip2=%s"):format(debug_api_call(IsUsableItem, itemlink), debug_api_call(IsEquippableItem, itemlink), debug_api_call(CanEquipItem, itemlink), debug_text(equip1), debug_text(equip2)))
@@ -1497,6 +1519,10 @@ function ItemScore:GetItemValidityForContext(itemlink, future, context)
 
 	if item.ignore_for_gear then
 		return {valid = false, final = true, reason = "test item", code = "test_item", item = item}
+	end
+
+	if item.unusable_by_tooltip then
+		return {valid = false, final = true, reason = "unsupported item type", code = "tooltip_subtype", item = item, slot = slot_1, slot_2 = slot_2, twohander = twohander}
 	end
 
 	if item.playerclass then
@@ -2523,6 +2549,7 @@ function ItemScore:GetItemDetailsQueued(itemlink,force)
 
 		-- class, spec check, and level check. we need to scan tooltip for those. meh.
 		local playerclass, playerspec
+		local unusable_by_tooltip
 		local canScanTooltip = true
 		Gratuity:SetHyperlink(itemlink)
 		if Gratuity:NumLines()==0 then
@@ -2570,6 +2597,9 @@ function ItemScore:GetItemDetailsQueued(itemlink,force)
 				if line==RETRIEVING_ITEM_INFO then return false end
 
 				if ItemScore.SaveTooltip then table.insert(tooltip,line) end
+				if tooltip_line_marks_unusable_item_subtype(num) then
+					unusable_by_tooltip = true
+				end
 
 				line = line:gsub("|c........",""):gsub("|r","") -- strip color codes, if any
 
@@ -2655,6 +2685,7 @@ function ItemScore:GetItemDetailsQueued(itemlink,force)
 			allowableRaceMask = dbitem and dbitem.allowableRaceMask,
 			playerspec = playerspec,
 			requires_detail = requires_detail,
+			unusable_by_tooltip = unusable_by_tooltip,
 			name = itemName,
 			needs_exact_stats = false,
 			needs_live_scan = false,
@@ -2825,6 +2856,19 @@ function ItemScore:GetItemValidity(itemlink, future)
 			reason = "test item",
 			code = "test_item",
 			item = item,
+		}
+	end
+
+	if item.unusable_by_tooltip then
+		return {
+			valid = false,
+			final = true,
+			reason = "unsupported item type",
+			code = "tooltip_subtype",
+			item = item,
+			slot = slot_1,
+			slot_2 = slot_2,
+			twohander = twohander,
 		}
 	end
 

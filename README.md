@@ -164,6 +164,13 @@ This addon is fully open source and can be inspected before use.
 
 ## Changelog
 
+### Revision 182 - 3.0.182
+
+- Added a targeted Gear Advisor guard for WotLK tooltips that mark an equipment subtype red on the right side of the item type row.
+- Items flagged this way are rejected before scoring with diagnostic code `tooltip_subtype`.
+- Updated `/zgvgearbug` output to include `tipUnusable=true/false` in the cached item line.
+- Updated addon version metadata to 3.0.182.
+
 ### Revision 181 - 3.0.181
 
 - Added the diagnostic-only `/zgvgearbug` slash command for Gear Advisor/Gear Finder item reports.
