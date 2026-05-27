@@ -164,6 +164,14 @@ This addon is fully open source and can be inspected before use.
 
 ## Changelog
 
+### Revision 188 - 3.0.188
+
+- Fixed Gear Advisor behavior on custom-server classes/specs so unknown builds no longer spam raw `Unknown spec` chat messages.
+- Added user-editable `Custom Spec 1`, `Custom Spec 2`, and `Custom Spec 3` stat-weight profiles for custom-server fallback use.
+- Unknown class/spec fallback now defaults to `Custom Spec 1` and prints one Zygor-branded Gear Advisor notice pointing users to Stat Weights.
+- Fixed embedded Stat Weights `Show All Stats` refresh so the scrollbar appears immediately, and right-aligned the scrollbar inside the options frame.
+- Updated addon version metadata to 3.0.188.
+
 ### Revision 187 - 3.0.187
 
 - Fixed Gear Finder paired-slot duplicate handling so the same trinket or ring is not recommended in both slots when item IDs are represented differently internally.
@@ -201,113 +209,6 @@ This addon is fully open source and can be inspected before use.
 - The command prints DB, live item info, cached item state, advisor validity, score, API probes, equipped slot baselines, and tooltip scanner color lines for a supplied item ID/link.
 - No recommendation behavior was changed in this release.
 - Updated addon version metadata to 3.0.181.
-
-### Revision 180 - 3.0.180
-
-- Rolled Gear Advisor scoring and bundled item DB metadata back to the 3.0.172 baseline after reports that the 3.0.173-3.0.179 advisor changes broke tooltip recommendations and Gear Finder behavior.
-- Removed the experimental localized armor/weapon guards, runtime usability guard, tooltip-color guard, pending DB-only item guard, and item-template class/subclass DB enrichment from the shipped code path.
-- Updated addon version metadata to 3.0.180.
-
-### Revision 179 - 3.0.179
-
-- Added numeric WotLK item-template class/subclass metadata to armor and weapon records in the bundled item DB.
-- Gear Advisor now uses DB-backed armor and weapon family data as a reliable fallback when live tooltip data is unavailable.
-- This keeps the 3.0.178 safety behavior while preventing localized tooltip/cache gaps from hiding basic usability data such as cloth, leather, mail, plate, shields, guns, bows, and wands.
-- Updated addon version metadata to 3.0.179.
-### Revision 178 - 3.0.178
-
-- Changed Gear Advisor item resolution so DB-only fallback gear records remain pending until Blizzard/tooltip item details are available.
-- Pending gear records are no longer eligible for advisor validity or score comparisons, preventing armor-only fallback data from recommending unusable leather/mail items to cloth-only classes.
-- Updated addon version metadata to 3.0.178.
-
-### Revision 177 - 3.0.177
-
-- Added a Gear Advisor tooltip-color guard so items with Blizzard-red unusable armor or weapon type lines are rejected before scoring.
-- Caches tooltip unusability during item scans and applies it in both immediate item validity paths.
-- Updated addon version metadata to 3.0.177.
-
-### Revision 176 - 3.0.176
-
-- Added a Gear Advisor runtime usability guard so items Blizzard reports as unusable for the current character are rejected before scoring.
-- Applies the guard before armor/DPS fallback comparisons to prevent unusable armor or weapon recommendations when localized subtype metadata is incomplete.
-- Updated addon version metadata to 3.0.176.
-
-### Revision 175 - 3.0.175
-
-- Fixed Gear Advisor armor-family detection so numeric item class/subclass data is preferred before localized text heuristics.
-- Routed localized subtype matching through the canonical localized lookup instead of the older English-only alias table.
-- This prevents leather and mail armor from being recommended to cloth-only classes through armor-only fallback scoring.
-- Updated addon version metadata to 3.0.175.
-
-### Revision 174 - 3.0.174
-
-- Fixed Gear Advisor weapon-family validation on localized clients so unusable weapon subtypes are rejected before DPS fallback scoring can recommend them.
-- Added localized weapon subtype resolution for standard WotLK weapon families, including guns, bows, crossbows, thrown weapons, wands, and melee weapon types.
-- Added defensive spear handling as a polearm-family alias.
-- Updated addon version metadata to 3.0.174.
-
-### Revision 173 - 3.0.173
-
-- Fixed Gear Advisor armor-family validation on localized clients so unusable armor subtypes are rejected before armor-only fallback scoring can recommend them.
-- Added localized armor subtype resolution for cloth, leather, mail, plate, and shield, with ruRU fallback aliases for tooltip wording differences.
-- Updated addon version metadata to 3.0.173.
-
-### Revision 172 - 3.0.172
-
-- Fixed Gear Finder empty result rows so internal `reject:` diagnostics no longer appear under `No upgrade found`.
-- Prevented Gear Finder from recommending an exact item already equipped in a ring or trinket paired slot.
-- Updated addon version metadata to 3.0.172.
-
-### Revision 171 - 3.0.171
-
-- Reduced built-in waypoint arrow garbage generation by separating arrow direction updates from distance/title/ETA text refreshes.
-- Added guards so unchanged arrow labels are not repeatedly rewritten, reused fallback color tables in the arrow update path, and fixed ETA averaging when no speed samples are available.
-- Added arrow optimization controls: 10 FPS arrow refresh, separate Arrow Text Refresh cadence, and an Animated Arrow Pulse toggle for lower per-frame visual work.
-- Updated addon version metadata to 3.0.171.
-
-### Revision 170 - 3.0.170
-
-- Fixed `|only if not Orc Warlock`-style race/class guide conditions so they route through the requirement matcher instead of producing invalid Lua. Thanks to Hypopheria for the report and test guide notes.
-- Fixed minimap waypoint update crashes when marker frames lose their waypoint during an update, and guarded Astrolabe minimap diameter lookup against custom indoor/zoom states.
-- Added a Talent Advisor enable toggle, hid the talent-tab advisor button when disabled, restored the button when enabled, and expanded the suggestion scroll area for larger unspent-talent batches.
-- Fixed the Gear Advisor character-screen Z button so disabling Gear Advisor hides the PaperDoll button and prevents the finder from opening.
-- Applied apesquatch's guide/runtime fixes from PRs #43-#48: class-defining `|noobsolete` quest tags, quest-chain corrections, Razor Hill envelope/key tag updates, guide metadata hoisting, and `Goal:IsFitting()` returning `self.wrong` state correctly.
-- Updated addon version metadata to 3.0.170.
-
-### Revision 169 - 3.0.169
-
-- Added an off-by-default Gear Finder `Prefer tier progression` mode that keeps the default best-path ranking unchanged unless enabled.
-- Tier progression now prefers base WotLK dungeon/heroic progression, treats Trial of the Champion, Forge of Souls, Pit of Saron, and Halls of Reflection as catch-up 5-mans, and falls forward per slot only when no upgrade exists in the current progression band.
-- Excluded raid-crafted items from tier-progression recommendations while preserving them for the default best-path mode.
-- Added race-mask validation from `ZygorItemDB.lua` so Gear Finder rejects race-locked items the current character cannot equip.
-- Updated addon version metadata to 3.0.169.
-
-### Revision 168 - 3.0.168
-
-- Added 76 additional missing item database records from `check_result (1).md` after verifying each item ID/name against WotLKDB.
-- Re-sorted `ZygorItemDB.lua` after the import by item level descending and item ID ascending, keeping the item database mechanically ordered.
-- Updated `ZygorItemDB.lua` metadata to `2026-05-13 12:15:18 -05:00` and `25183 Items`.
-- Updated addon version metadata to 3.0.168.
-
-### Revision 167 - 3.0.167
-
-- Added 170 missing low-level item records from the latest item database check result after verifying each item ID/name against WotLKDB.
-- Re-sorted `ZygorItemDB.lua` by item level descending and item ID ascending within each item level for easier review and future maintenance.
-- Updated `ZygorItemDB.lua` metadata to `2026-05-13 10:21:00 -05:00` and `25107 Items`.
-- Updated addon version metadata to 3.0.167.
-
-### Revision 166 - 3.0.166
-
-- Added a ChromieCraft compatibility guard for `QuestPOI_HideButtons` so missing Blizzard POI button globals no longer crash Astrolabe-driven map marker placement.
-- Added LibRover compatibility shims for partial `C_Map` tables that omit `GetBestMapForUnit` or `GetPlayerMapPosition` on 3.3.5a clients.
-- Updated addon version metadata to 3.0.166.
-
-### Revision 165 - 3.0.165
-
-- Fixed a combat-lockdown blocked action error where the floating action button bar could call protected `Hide()` paths while entering combat.
-- Added missing item database records for `23478` Recruit's Pants, `23479` Recruit's Robe, `1374` Frayed Shoes, and `2650` Flimsy Chain Boots.
-- Updated `ZygorItemDB.lua` metadata to `2026-05-13 09:12:38 -05:00` and `24937 Items`.
-- Updated addon version metadata to 3.0.165.
 
 ## Notes
 

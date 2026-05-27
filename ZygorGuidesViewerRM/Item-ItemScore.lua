@@ -1133,6 +1133,33 @@ local function get_class_tag(classRef)
 	end
 	return nil
 end
+
+function ItemScore:IsKnownWeightClass(classToken)
+	return classToken and self.rules and self.rules[classToken] and true or false
+end
+
+function ItemScore:GetCustomClassToken()
+	return "CUSTOM"
+end
+
+function ItemScore:GetCustomClassID()
+	return (ZGV.ClassToNumber and ZGV.ClassToNumber[self:GetCustomClassToken()]) or 11
+end
+
+function ItemScore:NotifyCustomWeightFallback(originalClass, originalBuild, reason)
+	ZGV.db.char.gear_custom_fallback_notices = ZGV.db.char.gear_custom_fallback_notices or {}
+	local groupKey = self.GetActiveTalentGroupKey and self:GetActiveTalentGroupKey() or 1
+	local noticeKey = ("%s:%s:%s:%s"):format(tostring(originalClass or "?"), tostring(originalBuild or "?"), tostring(groupKey or "?"), tostring(reason or "?"))
+	if ZGV.db.char.gear_custom_fallback_notices[noticeKey] then return end
+	ZGV.db.char.gear_custom_fallback_notices[noticeKey] = true
+
+	local message = ("Gear Advisor: Unknown class/spec detected (%s %s). Gear scoring has been set to Custom weights. You can adjust Custom weights in Gear Advisor > Stat Weights."):format(tostring(originalClass or "unknown"), tostring(originalBuild or "?"))
+	if ZGV and ZGV.Print then
+		ZGV:Print(message)
+	else
+		print(branded_chat_prefix("Gear Advisor") .. " " .. message)
+	end
+end
 	
 function ItemScore:Initialise()
 	-- apply lower armor types as viable
@@ -1214,6 +1241,7 @@ ItemScore.LevelingBuildFallback = {
 }
 
 function ItemScore:GetFallbackBuildForClass(classToken)
+	if not self:IsKnownWeightClass(classToken) then return 1 end
 	return (classToken and self.LevelingBuildFallback[classToken]) or 1
 end
 
@@ -1339,6 +1367,9 @@ function ItemScore:GetActiveBuildOverrideBuild(classToken, groupKey)
 end
 
 function ItemScore:GetActiveBuildSourceLabel()
+	if self.activeBuildUsesCustomFallback then
+		return "Custom weights"
+	end
 	if self:GetActiveBuildOverrideBuild(self.playerclass, self:GetActiveTalentGroupKey()) then
 		return "Overridden build"
 	end
@@ -2004,13 +2035,16 @@ function ItemScore:EnsureSelectedWeightTarget(forceReset)
 		-- based on player level (<10 always falls back), which overrides the
 		-- user's manual selection in the Options UI. We want the UI to show
 		-- exactly what the user picked, regardless of character level.
-		local classRules = self.rules and self.rules[selectedClassToken]
-		if classRules then
+	local classRules = self.rules and self.rules[selectedClassToken]
+	if classRules then
 			if not selectedBuild or not classRules[selectedBuild] then
 				local fallbackBuild = self:GetFallbackBuildForClass(selectedClassToken)
 				ZGV.db.char.gear_selected_build = classRules[fallbackBuild] and fallbackBuild or 1
 			end
 		end
+	elseif selectedClassToken then
+		ZGV.db.char.gear_selected_class = self:GetCustomClassID()
+		ZGV.db.char.gear_selected_build = 1
 	end
 
 	return ZGV.db.char.gear_selected_class, ZGV.db.char.gear_selected_build
@@ -2620,7 +2654,17 @@ function ItemScore:SetStatWeights(playerclass,playerspec,playerlevel)
 	self.playerclass = playerclass or (select(2,UnitClass("player")))
 	self.playerclassName = (select(1,UnitClass("player")))
 	self.playerraceName, self.playerraceToken = UnitRace("player")
-	self.playerclassNum = (self.playerclass and ZGV.ClassToNumber and ZGV.ClassToNumber[self.playerclass]) or 1
+	local originalClassToken = self.playerclass
+	local originalClassName = self.playerclassName
+	local usingCustomClassFallback = false
+	if not self:IsKnownWeightClass(self.playerclass) then
+		usingCustomClassFallback = true
+		self.unknownServerClassToken = originalClassToken
+		self.unknownServerClassName = originalClassName
+		self.playerclass = self:GetCustomClassToken()
+		self.playerclassName = "Custom"
+	end
+	self.playerclassNum = (self.playerclass and ZGV.ClassToNumber and ZGV.ClassToNumber[self.playerclass]) or self:GetCustomClassID()
 	local fakeLevel = tonumber(ZGV.db.char.fakelevel or 0) or 0
 	self.playerlevel = tonumber(playerlevel) or ((fakeLevel > 0 and fakeLevel) or UnitLevel("player"))
 	self.playerfaction = UnitFactionGroup("player")
@@ -2664,6 +2708,7 @@ function ItemScore:SetStatWeights(playerclass,playerspec,playerlevel)
 	self.activeBuildUsesOverride = activeBuildOverride and true or false
 	self.activeBuildUsesPreTalentOverride = preTalentOverrideBuild and true or false
 	self.activeBuildUsesFallback = usingFallbackBuild
+	self.activeBuildUsesCustomFallback = usingCustomClassFallback
 	self.playerspecName = self:GetBuildName(self.playerclass, ZGV.db.char.gear_active_build, self.playerlevel, usingFallbackBuild)
 	ItemScore.Upgrades.BadUpgrades = ZGV.db.char.badupgrade
 
@@ -2685,7 +2730,27 @@ function ItemScore:SetStatWeights(playerclass,playerspec,playerlevel)
 			for i,v in pairs(ItemScore.rules[self.playerclass][active_set].caps) do self.ActiveRuleSet.caps[i]=v end
 		end
 	else
-		print("Unknown spec",self.playerclass,active_set)
+		local fallbackClass = self:IsKnownWeightClass(self.playerclass) and self.playerclass or self:GetCustomClassToken()
+		local fallbackBuild = self:GetResolvedBuild(fallbackClass, self.playerlevel, 1)
+		local fallbackRule = ItemScore.rules[fallbackClass] and ItemScore.rules[fallbackClass][fallbackBuild]
+		if fallbackRule then
+			self:NotifyCustomWeightFallback(originalClassToken or self.playerclass, active_set, "missing_ruleset")
+			self.playerclass = fallbackClass
+			self.playerclassNum = (ZGV.ClassToNumber and ZGV.ClassToNumber[fallbackClass]) or self:GetCustomClassID()
+			ZGV.db.char.gear_active_build = fallbackBuild
+			active_set = fallbackBuild
+			for i,v in pairs(fallbackRule.itemtypes) do self.ActiveRuleSet.itemtypes[i]=v end
+			for i,v in pairs(fallbackRule.stats) do self.ActiveRuleSet.stats[i]=v end
+			if fallbackRule.caps then
+				for i,v in pairs(fallbackRule.caps) do self.ActiveRuleSet.caps[i]=v end
+			end
+		else
+			self:NotifyCustomWeightFallback(originalClassToken or self.playerclass, active_set, "missing_ruleset")
+		end
+	end
+
+	if usingCustomClassFallback then
+		self:NotifyCustomWeightFallback(originalClassToken, active_set, "unknown_class")
 	end
 
 	-- Update stats with users profile

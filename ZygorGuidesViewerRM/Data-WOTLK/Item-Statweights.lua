@@ -208,6 +208,26 @@ ItemScore.rules = {
 			caps = { HIT=8, DEFENSE_SKILL=540, EXPERTISE=26, HIT_SPELL=17 },
 		}
 	},
+	["CUSTOM"] = {
+		[1] = {
+			name="Custom Spec 1",
+			itemtypes = { CLOTH=1, LEATHER=1, MAIL=1, PLATE=1, SHIELD=1, BOW=1, CROSSBOW=1, DAGGER=1, FIST=1, GUN=1, MACE=1, TH_MACE=1, TH_POLE=1, TH_STAFF=1, SWORD=1, TH_SWORD=1, AXE=1, TH_AXE=1, WAND=1, THROWN=1, OFFHAND=1, MISCARM=1 },
+			stats = {STRENGTH=0.5, AGILITY=0.5, INTELLECT=0.5, SPIRIT=0.2, SPELL_POWER=0.5, ATTACK_POWER=0.35, HIT=0.75, CRIT=0.5, HASTE=0.4, STAMINA=0.1, ARMOR=0.01, DAMAGE_PER_SECOND=0.5},
+			caps = {},
+		},
+		[2] = {
+			name="Custom Spec 2",
+			itemtypes = { CLOTH=1, LEATHER=1, MAIL=1, PLATE=1, SHIELD=1, BOW=1, CROSSBOW=1, DAGGER=1, FIST=1, GUN=1, MACE=1, TH_MACE=1, TH_POLE=1, TH_STAFF=1, SWORD=1, TH_SWORD=1, AXE=1, TH_AXE=1, WAND=1, THROWN=1, OFFHAND=1, MISCARM=1 },
+			stats = {STRENGTH=0.5, AGILITY=0.5, INTELLECT=0.5, SPIRIT=0.2, SPELL_POWER=0.5, ATTACK_POWER=0.35, HIT=0.75, CRIT=0.5, HASTE=0.4, STAMINA=0.1, ARMOR=0.01, DAMAGE_PER_SECOND=0.5},
+			caps = {},
+		},
+		[3] = {
+			name="Custom Spec 3",
+			itemtypes = { CLOTH=1, LEATHER=1, MAIL=1, PLATE=1, SHIELD=1, BOW=1, CROSSBOW=1, DAGGER=1, FIST=1, GUN=1, MACE=1, TH_MACE=1, TH_POLE=1, TH_STAFF=1, SWORD=1, TH_SWORD=1, AXE=1, TH_AXE=1, WAND=1, THROWN=1, OFFHAND=1, MISCARM=1 },
+			stats = {STRENGTH=0.5, AGILITY=0.5, INTELLECT=0.5, SPIRIT=0.2, SPELL_POWER=0.5, ATTACK_POWER=0.35, HIT=0.75, CRIT=0.5, HASTE=0.4, STAMINA=0.1, ARMOR=0.01, DAMAGE_PER_SECOND=0.5},
+			caps = {},
+		},
+	},
 }
 
 ItemScore.Defaults = ItemScore.Defaults or ItemScore.rules
@@ -267,5 +287,10 @@ ItemScore.RuleSources = {
 		[1] = {label="Wowhead WotLK Classic Arms Warrior Overview", url="https://www.wowhead.com/wotlk/guide/classes/warrior/overview", reviewed="2026-04-20", mode="normalized_priority"},
 		[2] = {label="Wowhead WotLK Classic Fury Warrior Overview", url="https://www.wowhead.com/wotlk/guide/classes/warrior/overview", reviewed="2026-04-20", mode="normalized_priority"},
 		[3] = {label="Wowhead WotLK Classic Protection Warrior Overview", url="https://www.wowhead.com/wotlk/guide/classes/warrior/overview", reviewed="2026-04-20", mode="normalized_priority"},
+	},
+	CUSTOM = {
+		[1] = {label="Custom user-managed weights for unknown server classes/specs", reviewed="2026-05-27", mode="user_configurable"},
+		[2] = {label="Custom user-managed weights for unknown server classes/specs", reviewed="2026-05-27", mode="user_configurable"},
+		[3] = {label="Custom user-managed weights for unknown server classes/specs", reviewed="2026-05-27", mode="user_configurable"},
 	},
 }

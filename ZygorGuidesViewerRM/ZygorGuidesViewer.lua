@@ -270,6 +270,7 @@ if not ZGV.ClassToNumber then
 	ZGV.ClassToNumber = {
 		WARRIOR = 1, PALADIN = 2, HUNTER = 3, ROGUE = 4, PRIEST = 5,
 		DEATHKNIGHT = 6, SHAMAN = 7, MAGE = 8, WARLOCK = 9, DRUID = 10,
+		CUSTOM = 11,
 	}
 end
 
@@ -278,6 +279,7 @@ if not ZGV.NumberToClass then
 	ZGV.NumberToClass = {
 		[1] = "WARRIOR", [2] = "PALADIN", [3] = "HUNTER", [4] = "ROGUE", [5] = "PRIEST",
 		[6] = "DEATHKNIGHT", [7] = "SHAMAN", [8] = "MAGE", [9] = "WARLOCK", [10] = "DRUID",
+		[11] = "CUSTOM",
 	}
 end
 
@@ -294,6 +296,7 @@ if not ZGV.SpecByNumber then
 		MAGE = {[1]="Arcane", [2]="Fire", [3]="Frost"},
 		WARLOCK = {[1]="Affliction", [2]="Demonology", [3]="Destruction"},
 		DRUID = {[1]="Balance", [2]="Feral DPS", [3]="Feral TANK", [4]="Restoration"},
+		CUSTOM = {[1]="Custom Spec 1", [2]="Custom Spec 2", [3]="Custom Spec 3"},
 	}
 end
 

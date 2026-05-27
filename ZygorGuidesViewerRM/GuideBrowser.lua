@@ -5203,9 +5203,9 @@ local function EnsureGuideManagerStandaloneFrame(self)
 		-- Give embedded Ace options a small inner gutter so checkbox/text widgets
 		-- don't bleed over the middle-column frame border.
 		host.frame:SetPoint("TOPLEFT", frame.optionsContent, "TOPLEFT", 8, -6)
-		-- Leave dedicated room for AceGUI's external scrollbar, which is anchored
-		-- just outside the scroll frame and would otherwise be clipped here.
-		host.frame:SetPoint("BOTTOMRIGHT", frame.optionsContent, "BOTTOMRIGHT", -28, 6)
+		-- AceGUI anchors the scrollbar just outside the scroll frame. Keep the
+		-- host close to the panel edge so the bar is right-justified in-frame.
+		host.frame:SetPoint("BOTTOMRIGHT", frame.optionsContent, "BOTTOMRIGHT", -8, 6)
 		host.frame:SetFrameStrata(frame.optionsContent:GetFrameStrata() or "MEDIUM")
 		host.frame:SetFrameLevel((frame.optionsContent:GetFrameLevel() or 1) + 2)
 		host.frame:Show()

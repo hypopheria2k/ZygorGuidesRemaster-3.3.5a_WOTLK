@@ -236,6 +236,7 @@ function me:Options_RegisterDefaults()
 			itemscore_tooltips_allbuilds = false,
 			itemscore_tooltip_value_mode = "comparison",
 			itemscore_tooltip_normalize_score = false,
+			itemscore_score_sockets = true,
 			masterloot_notices = true,
 			masterloot_compare = true,
 			questitemcache = {},
@@ -2607,8 +2608,16 @@ function me:Options_DefineOptions()
 						or self.db.profile.itemscore_tooltip_value_mode == "comparison"
 				end,
 			},
+			itemscore_score_sockets = {
+				order = 3.4,
+				name = L["opt_itemscore_score_sockets"],
+				desc = L["opt_itemscore_score_sockets_desc"],
+				type = "toggle",
+				width = "full",
+				disabled = function() return not self.db.profile.autogear end,
+			},
 			prompting_header = {
-				order = 3.5,
+				order = 3.6,
 				type = "header",
 				name = "Prompting",
 			},
@@ -2834,7 +2843,7 @@ function me:Options_DefineOptions()
 			local classNum = SafeNumber(ZGV.db.char.gear_selected_class, ZGV.ItemScore.playerclassNum or 1) or 1
 			local buildNum = SafeNumber(ZGV.db.char.gear_selected_build, SafeNumber(ZGV.db.char.gear_active_build, 1)) or 1
 			local classToken = GetClassTagFromID(classNum)
-			local className = (LOCALIZED_CLASS_NAMES_MALE and classToken and LOCALIZED_CLASS_NAMES_MALE[classToken]) or (LOCALIZED_CLASS_NAMES_FEMALE and classToken and LOCALIZED_CLASS_NAMES_FEMALE[classToken]) or classToken or "Unknown class"
+			local className = classToken == "CUSTOM" and "Custom" or (LOCALIZED_CLASS_NAMES_MALE and classToken and LOCALIZED_CLASS_NAMES_MALE[classToken]) or (LOCALIZED_CLASS_NAMES_FEMALE and classToken and LOCALIZED_CLASS_NAMES_FEMALE[classToken]) or classToken or "Unknown class"
 			local fakeLevel = SafeNumber(ZGV.db and ZGV.db.char and ZGV.db.char.fakelevel, 0) or 0
 			local level = (fakeLevel > 0 and fakeLevel) or UnitLevel("player")
 			local classRules = classToken and ZGV.ItemScore.rules and ZGV.ItemScore.rules[classToken]
@@ -2850,7 +2859,7 @@ function me:Options_DefineOptions()
 			if not ZGV.ItemScore then return "Unknown class", "Unknown spec", nil, nil end
 			local classNum = ZGV.ItemScore.playerclassNum or 1
 			local classToken = ZGV.ItemScore.playerclass or GetClassTagFromID(classNum)
-			local className = (LOCALIZED_CLASS_NAMES_MALE and classToken and LOCALIZED_CLASS_NAMES_MALE[classToken]) or (LOCALIZED_CLASS_NAMES_FEMALE and classToken and LOCALIZED_CLASS_NAMES_FEMALE[classToken]) or classToken or "Unknown class"
+			local className = classToken == "CUSTOM" and "Custom" or (LOCALIZED_CLASS_NAMES_MALE and classToken and LOCALIZED_CLASS_NAMES_MALE[classToken]) or (LOCALIZED_CLASS_NAMES_FEMALE and classToken and LOCALIZED_CLASS_NAMES_FEMALE[classToken]) or classToken or "Unknown class"
 			local buildNum = SafeNumber(ZGV.db.char.gear_active_build, 1) or 1
 			local fakeLevel = SafeNumber(ZGV.db and ZGV.db.char and ZGV.db.char.fakelevel, 0) or 0
 			local level = (fakeLevel > 0 and fakeLevel) or UnitLevel("player")
@@ -2928,6 +2937,7 @@ function me:Options_DefineOptions()
 					[8] = male.MAGE or female.MAGE or "Mage",
 					[9] = male.WARLOCK or female.WARLOCK or "Warlock",
 					[10] = male.DRUID or female.DRUID or "Druid",
+					[11] = "Custom",
 				}
 			end, SafeTable),
 		set = WrapStatWeightsSet("gear_selected_class", function(i,v)
@@ -3119,6 +3129,17 @@ function me:Options_DefineOptions()
 				if ACR and ACR.NotifyChange then
 					ACR:NotifyChange("ZygorGuidesViewer-ItemScore")
 				end
+				local function refreshEmbeddedStatWeights()
+					local gm = ZGV and ZGV.GuideManagerStandaloneFrame
+					if gm and gm:IsShown() and gm.currentSection == "options" and gm.currentOptionsApp == "ZygorGuidesViewer-ItemScore" and gm.RenderOptionsApp then
+						gm:RenderOptionsApp("ZygorGuidesViewer-ItemScore")
+					end
+				end
+				if ZGV and ZGV.ScheduleTimer then
+					ZGV:ScheduleTimer(refreshEmbeddedStatWeights, 0.05)
+				else
+					refreshEmbeddedStatWeights()
+				end
 			end),
 		}
 
@@ -3147,6 +3168,7 @@ function me:Options_DefineOptions()
 			for class, classdata in pairs(ZGV.ItemScore.Defaults) do
 				for specnum, specdata in pairs(classdata) do
 					local classNum = ZGV.ClassToNumber[class]
+					if classNum then
 					local headerKey = "hdr_"..class.."_"..specnum
 					local customKey = "custom_"..class.."_"..specnum
 
@@ -3252,6 +3274,7 @@ function me:Options_DefineOptions()
 						width = "normal",
 					}
 					order = order + 1
+					end
 				end
 			end
 			MarkStatWeightsStage("schema", "dynamic-stats-finished")
