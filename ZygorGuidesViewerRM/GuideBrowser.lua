@@ -3322,9 +3322,9 @@ local function EnsureGuideManagerStandaloneFrame(self)
 	})
 	optionsPane:SetBackdropColor(0.08, 0.085, 0.10, 0.96)
 	optionsPane:SetBackdropBorderColor(0.24, 0.24, 0.28, 0.96)
-	if optionsPane.SetClipsChildren then
-		optionsPane:SetClipsChildren(true)
-	end
+	-- Do not call shimmed SetClipsChildren here. ClassicAPI 1.16+ implements it
+	-- by reparenting the frame into a synthetic ScrollFrame, which can make the
+	-- embedded AceConfig options pages render blank.
 	optionsPane:Hide()
 	frame.optionsPane = optionsPane
 
@@ -3373,9 +3373,7 @@ local function EnsureGuideManagerStandaloneFrame(self)
 	})
 	optionsContent:SetBackdropColor(0.08, 0.08, 0.08, 0.92)
 	optionsContent:SetBackdropBorderColor(0.26, 0.26, 0.26, 0.92)
-	if optionsContent.SetClipsChildren then
-		optionsContent:SetClipsChildren(true)
-	end
+	-- See optionsPane note above; clipping shims can hide embedded options pages.
 	frame.optionsContent = optionsContent
 
 	local optionsDetail = CreateFrame("Frame", nil, optionsPane)

@@ -171,6 +171,7 @@ This addon is fully open source and can be inspected before use.
 - Unknown class/spec fallback now defaults to `Custom Spec 1` and prints one Zygor-branded Gear Advisor notice pointing users to Stat Weights.
 - Fixed embedded Stat Weights `Show All Stats` refresh so the scrollbar appears immediately, and right-aligned the scrollbar inside the options frame.
 - Added missing item database coverage for grey item ID `1513` (`Old Greatsword`) so Gear Advisor no longer reports it as absent.
+- Fixed a compatibility issue where `!!!ClassicAPI` 1.16+ could make Guide Manager option pages render blank by injecting a clipping shim into 3.3.5a frames.
 - Updated addon version metadata to 3.0.188.
 
 ### Revision 187 - 3.0.187
